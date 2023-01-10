@@ -24,7 +24,11 @@ _start:
 	push dword buflen
 	push dword buf		; кладем параметр в стек
 	call getString		; вызваем подпрограмму
-	add ebp, 8		; очищаем стек от параметров
+	add esp, 8		; очищаем стек от параметров
+	
+	push dword buf
+	call writeString
+	add esp, 4
 ; Преобразуем строку в числа, знак операции, тип числа
 ;	pcall getOperParam v1, v2, typeOp, typeV1, typeV2
 ; передаем строку в продпрограмму расчета
@@ -32,8 +36,22 @@ _start:
 ; выводим результат арифметической операции
 ;	pcall ans, type
 ; Конец
-	;PUTCHAR 10
-	;FINISH
+	call writeLN
+	call quit
+
+; печать символа перевода строки
+writeLN:
+	sub esp, 4
+	mov edi, esp
+	mov al, 10
+	mov [edi], al
+	kernel 4, 1, edi, 1
+	add esp, 4
+	ret
+
+; завершение программы 
+quit:
+	kernel 1, 0
 
 ; подпрограмма чтения строки в буфер
 ; arg1 - буфер, arg2 - длина
@@ -123,7 +141,7 @@ intToString:
 	pop ebp
 	ret
 
-; подпрограмма перевода строки в число
+; подпрограмма перевода строки в целое число
 ; получает: строку(arg1) и адрес буфера(arg2) куда положить число
 ; выдает в eax успешность(ответ количество прочитанных символов числа) 
 ;  операции, в буфере число, 0 - мусор
@@ -140,7 +158,7 @@ strToInt:
 	xor eax, eax		; обнуляем число для вывода результата
 	mov edi, [arg2]		; адрес текущей позиции в строке
 	xor ebx, ebx	
-	xor edx
+	xor edx, edx
 .again:	mov bl, [edi]		; получаем символ
 	cmp bl, '0'		; если меньше нуля или больше 9 то
 	jl .end			; выдаем результат
@@ -175,7 +193,8 @@ strToInt:
 valueType:
 	ret
 
-; 
+; тип операции сложение вычитание умножение деление
+; получаем адрес строки 
 strToTypeOper:
 	ret
 
