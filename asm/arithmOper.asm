@@ -5,6 +5,10 @@
 ; 3) Начало подпрограммы и конец надо сделать в макросе
 ;    (может в заранее скомпилированном)
 ; 4) выложить исходники в гит
+
+; CDECL имеем право портить EAX, EDX, ECX
+;  все остальные регистры либо не трогать или сохранять и 
+;  восстанавливать перед выходом из функции
 ; %include "stud_io.inc" ; будем использовать только написанное
 %include "sysmacro.inc"
 
@@ -12,6 +16,10 @@ global	_start
 ; Инициализированные данные
 section .data
 xten dw 10
+putArithm db	'Enter an arithmetic expression', 0
+msgIsInt  db 	'Receive int value', 0
+msgIsFloat db	'Receive float value', 0
+
 ; Не инициализированные данные
 section .bss
 buf resb 512
@@ -20,34 +28,32 @@ buflen equ $-buf
 section	.text
 _start:	
 ; считываем строку
-;	pcall getString buf
 	push dword buflen
 	push dword buf		; кладем параметр в стек
 	call getString		; вызваем подпрограмму
 	add esp, 8		; очищаем стек от параметров
-	
+; передаем строку на обработку
 	push dword buf
-	call writeString
+	call arithm
 	add esp, 4
-; Преобразуем строку в числа, знак операции, тип числа
+
 ;	pcall getOperParam v1, v2, typeOp, typeV1, typeV2
 ; передаем строку в продпрограмму расчета
 ;	pcall getOperResult v1, v2, typeOp, typeV1, typeV2, ans, type
 ; выводим результат арифметической операции
 ;	pcall ans, type
 ; Конец
-	call writeLN
 	call quit
 
 ; печать символа перевода строки
 writeLN:
-	sub esp, 4
-	mov edi, esp
-	mov al, 10
-	mov [edi], al
-	kernel 4, 1, edi, 1
-	add esp, 4
-	ret
+	sub esp, 4 		; выделяем память под символ
+	mov edx, esp		; получаем адрес памяти
+	mov al, 10		; заносим число в регистр
+	mov [edx], al		; заносим число из регистра в память
+	kernel 4, 1, edx, 1	; системный вызов вывода в поток 
+	add esp, 4		;  стандартного вывода
+	ret			; завершаем
 
 ; завершение программы 
 quit:
@@ -118,6 +124,7 @@ writeString:
 	add esp, 4		; результат в eax
 	
 	kernel 4, 1, [arg1], eax; записываем строку в поток станд вывода
+	call writeLN
 	mov esp, ebp
 	pop ebp
 	ret
@@ -125,11 +132,12 @@ writeString:
 
 ; подпрограмма для перевода числа в строку
 ; получает: число(arg1) и адрес буфера строки(arg2)
-; CDECL имеем право портить EBP ESI EDI EAX
 intToString:
 	push ebp
 	mov ebp, esp
-	
+	push esi
+	push edi	
+
 	mov esi, [arg1]		; храним число в регистре
 	mov edi, [arg2]		; адрес текущей позиции в строке
 	
@@ -137,7 +145,10 @@ intToString:
 	cmp ax, 0		; если ноль то строка закончилась
 	jl .end			;
 .end:
-.quit:	mov esp, ebp	
+.quit:
+	pop edi
+	pop esi
+	mov esp, ebp
 	pop ebp
 	ret
 
@@ -150,8 +161,7 @@ strToInt:
 	mov ebp, esp
 	sub esp, 4		; буфер под локальную переменную
 				; состояния преобразования строки	
-	push ebx
-	push edx		; сохраняем для умножения
+	push ebx		; сохраняем для умножения
 
 	mov [local1], dword 0	; по умолчанию ставим что в локальной
 				; находится мусор
@@ -181,8 +191,7 @@ strToInt:
 .error: mov [local1], dword 0	; заносим ошибку в локальную переменную
 .quit:	mov eax, [local1]	; в eax выводим количество прочитанных 
 				; символов
-	pop edx			; восстанавливаем значения и выходим
-	pop ebx
+	pop ebx			; восстанавливаем значения и выходим
 	mov esp, ebp
 	pop ebp	
 	ret
@@ -190,16 +199,52 @@ strToInt:
 ; определяем что содержится в строке целое число или вещественное
 ; если целое то выдаем в eax 0 если вещественное то 1
 ; на вход волучаем адрес строки
-valueType:
+typeArithmStr:
+	push ebp
+	mov ebp, esp
+	
+	push edi
+
+	mov edi, [arg1] 	; получаем адрес строки полученной для 
+				; анализа
+;	inc edi
+;	push dword edi
+;	call writeString
+;	add esp, 4
+
+	xor edx, edx		; хранится тип полученного числа по умолчанию целое
+.again: mov al, [edi]
+	cmp al, 0		; если конец 
+	je .quit		;  завершаем
+	cmp al, '.'		; если найдена точки или 
+	je .isFlt		;  запятая
+	cmp al, ','		;  то получено вещественное число
+	je .isFlt		;  и выдаем 1 на выход
+	inc edi
+	jmp .again
+.isFlt	mov edx, 1
+	jmp .quit
+
+.quit:	mov eax, edx		; сохраняем тип числа в eax
+	cmp eax, 1		; если вещественно число
+	je .printFloat		; то печатаем сообщнеие что число вещественное
+	push dword msgIsInt	; иначе печатаем сообщение что
+	jmp .printMsgType	; число целое
+.printFloat:
+	push dword msgIsFloat
+.printMsgType:
+	call writeString	; вызываем печать
+	add esp, 4
+
+	pop edi
+	mov esp, ebp
+	pop ebp
 	ret
 
 ; тип операции сложение вычитание умножение деление
 ; получаем адрес строки 
 strToTypeOper:
 	ret
-
-section .data
-putArithm db	'Enter an arithmetic expression', 0
 
 ; получаем на вход адрес строки выполняем арифметическое действие в выводим
 ; arg1 адрес строки 
@@ -216,10 +261,10 @@ arithm:			; Начало подпрограммы арифметического
 
 	mov esi, [ebp+8]; загружаем параметры: адреса строки 
 	mov edi, [ebp+12];
-
 ; Сначала определяем тип чисел поступивших на вход
-
-; если целый то выполняем операции над целыми
+	push dword [arg1]
+	call typeArithmStr
+	add esp, 4
 
 ; если вещественные то над вещественными
 
