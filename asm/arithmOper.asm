@@ -207,10 +207,6 @@ typeArithmStr:
 
 	mov edi, [arg1] 	; получаем адрес строки полученной для 
 				; анализа
-;	inc edi
-;	push dword edi
-;	call writeString
-;	add esp, 4
 
 	xor edx, edx		; хранится тип полученного числа по умолчанию целое
 .again: mov al, [edi]
@@ -220,7 +216,7 @@ typeArithmStr:
 	je .isFlt		;  запятая
 	cmp al, ','		;  то получено вещественное число
 	je .isFlt		;  и выдаем 1 на выход
-	inc edi
+	inc edi	
 	jmp .again
 .isFlt	mov edx, 1
 	jmp .quit
@@ -242,8 +238,48 @@ typeArithmStr:
 	ret
 
 ; тип операции сложение вычитание умножение деление
-; получаем адрес строки 
+; получаем адрес строки arg1
+; выдаем если '+' - 1, '-' - 2, '*' - 3, '/' - 4
+; если знак не определен то выдаем 0 в eax
 strToTypeOper:
+	push ebp
+	mov ebp, esp
+	
+	push edi
+
+	mov edi, [arg1] 	; получаем адрес строки полученной для 
+				; анализа
+
+	xor edx, edx		; хранится тип полученного числа по умолчанию целое
+.again: mov al, [edi]
+	cmp al, 0		; если конец 
+	je .quit		;  завершаем
+	cmp al, '+'		; найдем тип
+	je .if_plus		; операции
+	cmp al, '-'		; которую необходимо выполнить
+	je .if_minus
+	cmp al, '*'
+	je .if_mul
+	cmp al, '/'
+	je .if_div
+	inc edi
+	jmp .again
+.if_plus:
+	mov edx, 1
+	jmp .quit
+.if_minus:
+	mov edx, 2
+	jmp .quit
+.if_mul:
+	mov edx, 3
+	jmp .quit
+.if_div:
+	mov edx, 4
+	jmp .quit
+.quit:	mov eax, edx		; сохраняем результат в eax 
+	pop edi			;  и выходим
+	mov esp, ebp
+	pop ebp
 	ret
 
 ; получаем на вход адрес строки выполняем арифметическое действие в выводим
@@ -259,14 +295,23 @@ arithm:			; Начало подпрограммы арифметического
 	push esi	; Сохраняем регистры ESI и EDI (EAX всё равно 
 	push edi	; изменится)
 
-	mov esi, [ebp+8]; загружаем параметры: адреса строки 
-	mov edi, [ebp+12];
+;	mov esi, [ebp+8]; загружаем параметры: адреса строки 
+;	mov edi, [ebp+12];
 ; Сначала определяем тип чисел поступивших на вход
 	push dword [arg1]
 	call typeArithmStr
 	add esp, 4
+	mov esi, eax	; сохраняем тип чисел в esi
+; получаем тип операции сложение вычитание умножение деление
+	push dword [arg1]
+	call strToTypeOper
+	add esp, 4
+	mov edi, eax	; сохраняем тип операции в edi
+; если число целое то производим операцию и получаем строковый ответ
 
 ; если вещественные то над вещественными
+
+; выводим результат
 
 .quit:
 	pop edi
