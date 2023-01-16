@@ -15,15 +15,22 @@
 global	_start
 ; Инициализированные данные
 section .data
-xten dw 10
+xten dd 10
 putArithm db	'Enter an arithmetic expression', 0
 msgIsInt  db 	'Receive int value', 0
 msgIsFloat db	'Receive float value', 0
+msgErrArifm db  'Error of arifmecit operation', 0
+msgErrStrToInt db	'Error of convert string to integer', 0
+msgPrintInt db	'Print integer:', 0
+msgAnswer db 	'Answer:', 0
+msgThis db	'This', 0
 
 ; Не инициализированные данные
 section .bss
 buf resb 512
 buflen equ $-buf
+strVal resb 128
+strValLen equ $-strVal
 
 section	.text
 _start:	
@@ -132,65 +139,110 @@ writeString:
 
 ; подпрограмма для перевода числа в строку
 ; получает: число(arg1) и адрес буфера строки(arg2)
-intToString:
+intToStr:
 	push ebp
 	mov ebp, esp
 	push esi
-	push edi	
+	push edi
+	push ebx
 
-	mov esi, [arg1]		; храним число в регистре
-	mov edi, [arg2]		; адрес текущей позиции в строке
+	mov edi, [arg2]	; адрес текущей позиции в строке
+	add edi, 64		; оставим 64 символа чтобы 
+				; инвертировать полученную строку 
+				; с конца в начало
+	mov eax, [arg1] 	; переносим делимое в eax
+	mov ecx, 0		; счетчик количесва символов в строке
 	
-.again:	mov eax, [edi]		; получаем символ
-	cmp ax, 0		; если ноль то строка закончилась
-	jl .end			;
-.end:
+.again:	cdq			; расширяем делимое eax
+	mov ebx, 10		; заносим 10
+	div ebx			; делим на 10
+	add dl, '0'		; получаем символ числа
+	mov [edi], dl		; сохраняем символ остатка в массив
+	inc edi			; увеличиваем адрес	
+	inc ecx
+	cmp eax, 0		; если ноль то строка закончилась
+	je .end			;
+	jmp .again		; если больше 0 то делим дальше
+.end:	mov eax, [arg2]		; в начало стрики будем кидать конец
+.invert:dec ecx
+	dec edi			; начинаем с конца
+	mov dl, [edi]		; получаем символ	
+	mov [eax], dl		; помещаем его в ответ
+	inc eax
+	cmp ecx, 0		; если строка не кончилась
+	jne .invert		; то продолжаем перенос
+	mov bl, 0
+	mov [eax], bl		; помечаем конец строки и выходим
 .quit:
+	;pcall writeString, msgThis	
+	;pcall writeString, [arg2]
+	;pcall writeString, msgThis	
+	pop ebx
 	pop edi
 	pop esi
 	mov esp, ebp
 	pop ebp
 	ret
 
+; Печатаем число в буфер вывода
+; arg1 - целое число
+printInt:
+	push ebp
+	mov ebp, esp
+; переводим число в строку	
+	pcall intToStr, [arg1], strVal
+; печатаем строку
+	pcall writeString, msgPrintInt 
+	pcall writeString, strVal
+.quit:
+	mov esp, ebp
+	pop ebp
+	ret
+
 ; подпрограмма перевода строки в целое число
-; получает: строку(arg1) и адрес буфера(arg2) куда положить число
+; получает: строку(arg1)
 ; выдает в eax успешность(ответ количество прочитанных символов числа) 
 ;  операции, в буфере число, 0 - мусор
+; edx - результат
 strToInt:
 	push ebp
 	mov ebp, esp
 	sub esp, 4		; буфер под локальную переменную
 				; состояния преобразования строки	
 	push ebx		; сохраняем для умножения
+	push edi
 
 	mov [local1], dword 0	; по умолчанию ставим что в локальной
 				; находится мусор
 	xor eax, eax		; обнуляем число для вывода результата
-	mov edi, [arg2]		; адрес текущей позиции в строке
-	xor ebx, ebx	
+	mov edi, [arg1]		; адрес текущей позиции в строке
 	xor edx, edx
-.again:	mov bl, [edi]		; получаем символ
+.again:	xor ebx, ebx	
+	mov bl, [edi]		; получаем символ
 	cmp bl, '0'		; если меньше нуля или больше 9 то
-	jl .end			; выдаем результат
+	jb .end			; выдаем результат
 	cmp bl, '9'		; заканчиваем считать
-	jg .end
-	inc dword [local1]	; если нашли символ числа то говорим
+	ja .end
+	mov [local1], dword 1	; если нашли символ числа то говорим
 				; что на выходе должен быть результат
 	sub bl, '0'		; получаем цифру в десятичном виде
-	mul dword [xten]	; умножаем на 10 предыдущее число
+	
+	mul dword [xten] 	; умножаем на 10 предыдущее число
 	jc .error		; ПРОВЕРИТЬ работу, если произошло переполнение
 				;  то выходим и выводим ошибку
 	add eax, ebx		; и складываем с полученным
 	jc .error
 	inc edi			; возвращаемся для дальнейшей обработки
 	jmp .again	
-.end:	mov edi, [arg2]		; получаем адрес куда положить ответ
-	mov [edi], eax		; кладем ответ по полученному адресу	
+.end:	
+	mov edx, eax
 	jmp .quit
 
 .error: mov [local1], dword 0	; заносим ошибку в локальную переменную
+	pcall writeString, msgErrStrToInt
 .quit:	mov eax, [local1]	; в eax выводим количество прочитанных 
 				; символов
+	pop edi
 	pop ebx			; восстанавливаем значения и выходим
 	mov esp, ebp
 	pop ebp	
@@ -221,8 +273,8 @@ typeArithmStr:
 .isFlt	mov edx, 1
 	jmp .quit
 
-.quit:	mov eax, edx		; сохраняем тип числа в eax
-	cmp eax, 1		; если вещественно число
+.quit:	mov edi, edx		; сохраняем тип числа
+	cmp edx, 1		; если вещественно число
 	je .printFloat		; то печатаем сообщнеие что число вещественное
 	push dword msgIsInt	; иначе печатаем сообщение что
 	jmp .printMsgType	; число целое
@@ -231,7 +283,7 @@ typeArithmStr:
 .printMsgType:
 	call writeString	; вызываем печать
 	add esp, 4
-
+	mov eax, edi		; восстанвливаем
 	pop edi
 	mov esp, ebp
 	pop ebp
@@ -241,6 +293,7 @@ typeArithmStr:
 ; получаем адрес строки arg1
 ; выдаем если '+' - 1, '-' - 2, '*' - 3, '/' - 4
 ; если знак не определен то выдаем 0 в eax
+; в edx выдадим номер позиции символа
 strToTypeOper:
 	push ebp
 	mov ebp, esp
@@ -277,11 +330,91 @@ strToTypeOper:
 	mov edx, 4
 	jmp .quit
 .quit:	mov eax, edx		; сохраняем результат в eax 
-	pop edi			;  и выходим
-	mov esp, ebp
+	mov edx, edi		; сохраняем в edx позицию знака в
+	sub edx, [arg1]		;  строке и выводим результат
+	pop edi			; восстанавливаем регистры и покидаем
+	mov esp, ebp		; функцию
 	pop ebp
 	ret
 
+
+; Арифметическая операция над целыми числами
+operInt:
+	push ebp
+	mov ebp, esp
+	sub esp, 24 		; выделяем память под локальные переменные
+	push edi		; сохраняем edi т.к. будем его изменять
+; получаем тип операции сложение вычитание умножение деление
+	pcall strToTypeOper, [arg1]
+	mov [local1], eax	; сохраняем тип операции в
+	mov [local2], edx	; сохраняем номер позиции знака
+	;pcall printInt, [local1]; печатаем номер знака 
+	;pcall printInt, [local2]; номер позиции знака
+
+; преобразуем первое число из текста в байт код
+	pcall strToInt, [arg1]
+	cmp eax, 0
+	je .error
+	mov [local3], edx	; сохраняем результат в стек
+	;pcall printInt, edx 
+; преобразуем второе число из текста в байт код
+	mov eax, [arg1]		; получим адрес второго числа
+	add eax, [local2]	; и передадим его подпрограмме
+	inc eax			; пропускаем знак операции
+	pcall strToInt, eax
+	cmp eax, 0
+	je .error
+	mov [local(4)], edx
+	;pcall printInt, [local(4)]
+	
+
+	;pcall writeString, msgThis
+	mov eax, [local1]
+	cmp eax, 1
+	jne .not_plus
+; код для плюса
+	mov eax, [local(3)]	; получаем первое число 
+	add eax, [local(4)]	; складываем оба числа
+	jmp .ansToStr 
+.not_plus:
+	cmp eax, 2
+	jne .not_minus
+; код для минуса
+	mov eax, [local(3)]	; переносим первое числа в eax
+	sub eax, [local(4)]	; вычитаем из первого второе
+	jmp .ansToStr
+.not_minus:
+	cmp eax, 3
+	jne .not_mul
+; код для умножения
+	mov eax, [local(3)]
+	mul dword [local(4)]
+	jmp .ansToStr
+.not_mul:
+	cmp eax, 4
+	jne .not_div
+; код для деления
+	mov eax, [local(3)]
+	mov edx, 0
+	div dword [local(4)]
+	jmp .ansToStr
+.not_div:
+; ничего не найдено необходимо выдать ошибку и выйти
+	
+	jmp .print_ans
+.ansToStr:
+	pcall intToStr, eax, buf
+.print_ans:
+	pcall writeString, msgAnswer
+	pcall writeString, buf
+	jmp .quit
+.error:
+	pcall writeString, msgErrArifm
+.quit:
+	pop edi
+	mov esp, ebp
+	pop ebp
+	ret
 ; получаем на вход адрес строки выполняем арифметическое действие в выводим
 ; arg1 адрес строки 
 arithm:			; Начало подпрограммы арифметического
@@ -290,7 +423,7 @@ arithm:			; Начало подпрограммы арифметического
 	push ebp	; организуем стековый фрейм
 	mov ebp, esp	; заносим адрес возврата в ebp т.к esp будет
 			;  использоваться в подпрограмме
-	sub esp, 4	; локальная переменная I будет по адресу 
+	sub esp, 12	; локальная переменная I будет по адресу 
 			; [ebp-4]
 	push esi	; Сохраняем регистры ESI и EDI (EAX всё равно 
 	push edi	; изменится)
@@ -298,19 +431,21 @@ arithm:			; Начало подпрограммы арифметического
 ;	mov esi, [ebp+8]; загружаем параметры: адреса строки 
 ;	mov edi, [ebp+12];
 ; Сначала определяем тип чисел поступивших на вход
-	push dword [arg1]
-	call typeArithmStr
-	add esp, 4
-	mov esi, eax	; сохраняем тип чисел в esi
+	pcall typeArithmStr, [arg1]
+	mov [local1], eax	; сохраняем тип чисел в esi
 ; получаем тип операции сложение вычитание умножение деление
-	push dword [arg1]
-	call strToTypeOper
-	add esp, 4
-	mov edi, eax	; сохраняем тип операции в edi
+	pcall strToTypeOper, [arg1]
+	mov [local2], eax	; сохраняем тип операции в edi
+	mov [local3], edx	; сохраняем номер позиции знака
 ; если число целое то производим операцию и получаем строковый ответ
 
+	;pcall writeString, msgThis
+	mov eax, [local1]
+	cmp eax, 0
+	jne .float_oper
+	pcall operInt, [arg1]	; запускаем соответствующую функцию
 ; если вещественные то над вещественными
-
+.float_oper:
 ; выводим результат
 
 .quit:
