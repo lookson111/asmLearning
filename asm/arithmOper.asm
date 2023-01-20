@@ -15,19 +15,23 @@
 global	_start
 ; Инициализированные данные
 section .data
+xone dd 1
 xten dd 10
+fone dd 1.0
+ften dd 10.0
 msgPutArithm db	'Enter an arithmetic expression:', 0
 msgIsInt  db 	'Receive int value', 0
 msgIsFloat db	'Receive float value', 0
 msgErrArifm db  'Error of arifmecit operation', 0
 msgErrStrToInt db	'Error of convert string to integer', 0
+msgErrFloatOper db 	'Error of float operation', 0
 msgPrintInt db	'Print integer:', 0
 msgAnswer db 	'Answer:', 0
 msgThis db	'This', 0
 
-valFloat1 dq 43.123
-valFloat2 dq 1.3
-valFloat10k dq 10000.0
+valFloat1 dd 43.123
+valFloat2 dd 1.3
+valFloat10k dd 10000.0
 ; Не инициализированные данные
 section .bss
 buf resb 512
@@ -37,7 +41,7 @@ strValLen equ $-strVal
 
 section	.text
 _start:	
-	pcall printFloat, valFloat1
+	;pcall printFloat, valFloat1
 	pcall writeString, msgPutArithm
 ; считываем строку
 	push dword buflen
@@ -217,8 +221,8 @@ floatToStr:
 	push esi
 	push edi
 	push ebx
-	mov edi, [arg3]		; адрес текущей позиции в строке
-	fld qword [arg1] 	; переносим делимое в ST
+	mov edi, [arg2]		; адрес текущей позиции в строке
+	fld dword [arg1] 	; переносим делимое в ST
 	fist dword [local1]	; преобразуем из ST0 в знаковое целое
 	pcall intToStr, [local1], edi	; преобразуем целую часть в строку
 ; поставим точку в конец
@@ -234,10 +238,9 @@ floatToStr:
 	fild dword [local1]	; заносим в стек сопроцесоора целое число
 				;  до запятой
 	fsub			; оставляем только после запятой
-	fmul qword [valFloat10k]	; умножаем на 10000 выделяем вещественную часть числа
+	fmul dword [valFloat10k]	; умножаем на 10000 выделяем вещественную часть числа
 	fist dword [local1]	
 	pcall intToStr, [local1], edi 	; печатаем в строку
-		
 .quit:	mov esp, ebp
 	pop ebp
 	ret
@@ -248,14 +251,7 @@ printFloat:
 	push ebp
 	mov ebp, esp
 ; переводим число в строку
-	push dword strVal
-	mov eax, valFloat1
-	add eax, 4
-	push dword [eax]
-	sub eax, 4
-	push dword [eax]
-	call floatToStr
-	add esp, 12
+	pcall floatToStr, [arg1], strVal
 	pcall writeString, strVal
 .quit: 	mov esp, ebp
 	pop ebp
@@ -307,6 +303,75 @@ strToInt:
 	pop ebp	
 	ret
 
+; преобразуем строку значение типа float
+; получает: строку(arg1)
+; выдает в eax успешность(ответ количество прочитанных символов числа) 
+;  операции, в буфере число, 0 - мусор
+; edx - результат
+strToFloat:
+	push ebp
+	mov ebp, esp
+	sub esp, 8 
+	push ebx
+	pcall strToInt, [arg1]	; заносим в сопроцессор
+	cmp eax, 0		; значение числа 
+	je .error		; до
+	mov [local1], edx
+	fild dword [local1]		; запятой
+	; находим позицию точки до знака операции или конца строки
+	mov eax, [arg1]
+.again:	mov bl, '+'	; если 
+	cmp [eax], bl	; найден знак
+	je .end		; операции 
+	mov bl, '-'	; или 
+	cmp [eax], bl	; конец
+	je .end		; то завершаем
+	mov bl, '*'	
+	cmp [eax], bl
+	je .end
+	mov bl, 0
+	cmp [eax], bl
+	je .end
+	mov bl, '.'	; если 
+	cmp [eax], bl	; найдена точка
+	je .point_find	; или запятая
+	mov bl, ','	; то проебразуем дробную часть
+	cmp [eax], bl	;
+	je .point_find	;
+	inc eax
+	jmp .again
+.point_find:
+	inc eax
+	pcall strToInt, eax	; пребразуем дробную часть
+	cmp eax, 0
+	je .error
+	mov [local2], edx
+	fild dword [local2]	; заносим дробную часть в сопроцессор
+	cmp edx, 1		; если получили 1 то пропускаем цикл деления 
+	je .end_one		; (непонятная ошибка со сравнением)
+	cmp edx, 0		; если ноль то результат получен 
+	je .end_div		; пропускаем
+.divz:
+	fidiv dword [xten]	; если нет то делим на 10 и повторяем
+	fcom dword [fone]	; сравниваем
+	fstsw ax		; заносим флаги в AX
+	sahf			;  и оттуда - во FLAGS
+	jae .divz		; если 1 больше то мы перевели в дробную
+	;mov dword [local1], 10
+	;jmp .divz
+.end_one:
+	fdiv dword [ften]
+.end_div:
+	fiadd dword [local1]		; складаваем дробную и целую часть
+.end:
+	fstp dword [local1]
+	mov edx, [local1]
+	jmp .quit
+.error:
+.quit:	pop edi
+	mov esp, ebp
+	pop ebp
+	ret
 ; определяем что содержится в строке целое число или вещественное
 ; если целое то выдаем в eax 0 если вещественное то 1
 ; на вход волучаем адрес строки
@@ -465,7 +530,7 @@ operInt:
 operFloat:
 	push ebp
 	mov ebp, esp
-	sub esp, 24 		; выделяем память под локальные переменные
+	sub esp, 64 		; выделяем память под локальные переменные
 	push edi		; сохраняем edi т.к. будем его изменять
 ; получаем тип операции сложение вычитание умножение деление
 	pcall strToTypeOper, [arg1]
@@ -473,7 +538,58 @@ operFloat:
 	mov [local2], edx	; сохраняем номер позиции знака
 	cmp eax, 0		; обработка ошибки 
 	je .error
+; преобразуем первое число из текста в байт код
+	pcall strToFloat, [arg1]
+	cmp eax, 0		; обработка ошибки
+	je .error
+	mov [local(3)], edx	; сохраняем результат в стек
+	pcall printFloat, [local(3)]
+	;pcall writeString, msgThis
+	;pcall printFloat, [local(3)] 
+	;pcall writeString, msgThis
+; преобразуем второе число из текста в байт код
+	mov eax, [arg1]		; получим адрес второго числа
+	add eax, [local2]	; и передадим его подпрограмме
+	inc eax			; пропускаем знак операции
+	pcall strToFloat, eax
+	cmp eax, 0
+	je .error
+	mov [local(4)], edx
+	pcall printFloat, [local(4)]
+	fld dword [local(3)]	; получаем первое число 
+	mov eax, [local1]
+	cmp eax, 1
+	jne .not_plus
+; код для плюса
+	fadd dword [local(4)]	; складываем оба числа
+	jmp .ansToStr 
+.not_plus:
+	cmp eax, 2
+	jne .not_minus
+; код для минуса
+	fsub dword [local(4)]	; вычитаем из первого второе
+	jmp .ansToStr
+.not_minus:
+	cmp eax, 3
+	jne .not_mul
+; код для умножения
+	fmul dword [local(4)]
+	jmp .ansToStr
+.not_mul:
+	cmp eax, 4
+	jne .not_div
+; код для деления
+	pcall writeString, msgThis
+	fdiv dword [local(4)]
+	jmp .ansToStr
+.not_div:
 .error:
+	pcall writeString, msgErrFloatOper
+	jmp .quit
+.ansToStr:	
+	fst dword [local(3)]	; выталкиваем результат в память
+	pcall writeString, msgAnswer
+	pcall printFloat, [local(3)] ; печатаем результат
 .quit:
 	pop edi
 	mov esp, ebp
@@ -503,11 +619,11 @@ arithm:			; Начало подпрограммы арифметического
 	mov eax, [local1]
 	cmp eax, 0
 	jne .float_oper
-	pcall operInt, [arg1]	; запускаем соответствующую функцию
+	pcall operInt, [arg1]	; запускаем расчет целых
 	jmp .quit
 ; если вещественные то над вещественными
 .float_oper:
-	pcall operFloat, [arg1]
+	pcall operFloat, [arg1]	; запускаем расчет вещественного числа
 ; выводим результат
 .quit:	pop edi
 	pop esi	

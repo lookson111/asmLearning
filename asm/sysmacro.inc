@@ -24,6 +24,14 @@
 	add esp, (%0 - 1) * 4	; убираем параметры из стека
 %endmacro
 
+; макрос записи значения типа double в стек
+%macro doublePush 1
+	mov eax, %1
+	add eax, 4
+	push dword [eax]
+	push dword [%1]
+%endmacro
+
 %define FREADONLY 000h
 %ifdef OS_FREEBSD
 %define FCREATE 200h
