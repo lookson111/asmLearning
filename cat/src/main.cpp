@@ -1,37 +1,76 @@
 #include <iostream>
-#include <SFML/Graphics.hpp>
+#include <SFML/Window.hpp>
+#include <SFML/OpenGL.hpp>
 
 int main()
 {
-    int w = 900;
-    int h = 800;
+    float theta = 0.0f;
+    // create the window
+    sf::Window window(sf::VideoMode(800, 600), "OpenGL", sf::Style::Default, sf::ContextSettings(32));
+    window.setVerticalSyncEnabled(true);
 
-    sf::RenderWindow window(sf::VideoMode(w, h), "Cutting an object", sf::Style::Titlebar | sf::Style::Close);
-    window.setFramerateLimit(60);
+    // activate the window
+    window.setActive(true);
 
-    sf::Shader shader;
-    if (!shader.loadFromFile("../../src/shader.frag", sf::Shader::Fragment)) {
-        std::cout << "Shader load error!!" << std::endl;
-    }
+    // load resources, initialize the OpenGL states, ...
 
-    sf::RenderTexture firstTexture;
-    firstTexture.create(w, h);
-    sf::Sprite firstTextureSprite = sf::Sprite(firstTexture.getTexture());
-    sf::Sprite firstTextureSpriteFlipped = sf::Sprite(firstTexture.getTexture());
-    firstTextureSpriteFlipped.setScale(1, -1);
-    firstTextureSpriteFlipped.setPosition(0.0, (float)h);
-
-    while (window.isOpen()) {
+    // run the main loop
+    bool running = true;
+    while (running)
+    {
+        // handle events
         sf::Event event;
         while (window.pollEvent(event))
         {
-            if (event.type == sf::Event::Closed)
-                window.close();
+            switch (event.type)
+            {
+            case sf::Event::Closed:
+                running = false;
+                break;
+            case sf::Event::Resized:
+                window.setSize({ static_cast<unsigned int>(event.size.width), static_cast<unsigned int>(event.size.height) });
+                break;
+            case sf::Event::KeyPressed:
+                if (event.key.code == sf::Keyboard::Escape)
+                    running = false;
+                break;
+            default:
+                break;
+            }
         }
-        window.clear();
-        window.draw(firstTextureSpriteFlipped, &shader);
+
+        // clear the buffers
+        glClearColor(0.0f, 0.0f, 0.2f, 0.0f); // цвет очистки экрана
+        glClear(GL_COLOR_BUFFER_BIT);
+
+        // draw...
+        glPushMatrix();
+        glRotatef(theta, 1.0f, 0.0f, 1.0f);
+
+        glBegin(GL_TRIANGLES);
+
+        glColor3f(1.0f, 0.0f, 0.0f); glVertex2f(0.0f, 0.0f);
+        glColor3f(0.0f, 1.0f, 0.0f); glVertex2f(1.0f, 0.0f);
+        glColor3f(0.0f, 0.0f, 1.0f); glVertex2f(1.0f, 1.0f);
+
+        glColor3f(1.0f, 0.0f, 0.0f); glVertex2f(0.0f, 0.0f);
+        glColor3f(0.0f, 1.0f, 0.0f); glVertex2f(0.0f, 1.0f);
+        glColor3f(0.0f, 0.0f, 1.0f); glVertex2f(1.0f, 1.0f);
+
+        glColor3f(1.0f, 0.0f, 0.0f); glVertex3f(0.0f, 0.0f, 0.0f);
+        glColor3f(0.0f, 1.0f, 0.0f); glVertex3f(0.0f, 0.0f, 1.0f);
+        glColor3f(0.0f, 0.0f, 1.0f); glVertex3f(1.0f, 0.0f, 1.0f);
+
+        glEnd();
+
+        glPopMatrix();
+        theta += 1.0f;
+
+        // end the current frame (internally swaps the front and back buffers)
         window.display();
     }
+
+    // release resources...
 
     return 0;
 }

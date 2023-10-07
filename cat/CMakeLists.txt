@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.11)
 
-project(cut_object CXX)
+project(opengl_lessons CXX)
 set(CMAKE_CXX_STANDARD 20)
 
 include(${CMAKE_BINARY_DIR}/conanbuildinfo_multi.cmake)
@@ -15,18 +15,18 @@ find_package(Threads REQUIRED)
 
 set(CATCH2LIB CONAN_PKG::catch2)
 
-add_executable(cut_object
+add_executable(opengl_lessons
 	src/main.cpp
 )
 
-target_link_libraries(cut_object PRIVATE 
+target_link_libraries(opengl_lessons PRIVATE 
 	CONAN_PKG::sfml
 )
 
-add_executable(cut_object_tests
-    tests/cut_object_tests.cpp
+add_executable(opengl_lessons_tests
+    tests/opengl_lessons_tests.cpp
 )
 
-target_link_libraries(cut_object_tests PRIVATE 
+target_link_libraries(opengl_lessons_tests PRIVATE 
 	${CATCH2LIB} 
 )

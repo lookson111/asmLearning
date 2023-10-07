@@ -1,7 +1,0 @@
-[settings]
-os = "Windows"
-compiler = "msvc"
-compiler.version = 191
-
-[conf]
-tools.microsoft.msbuild:vs_version = 16
