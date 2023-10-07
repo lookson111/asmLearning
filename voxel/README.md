@@ -62,6 +62,7 @@ https://russianblogs.com/article/4896740001/
 ## Install 
 # Ubuntu
 
+```
 conan install .. --build=missing -s build_type=Debug -s compiler.libcxx=libstdc++11
 sudo apt update
 sudo apt upgrade
@@ -72,10 +73,10 @@ sudo apt install libx11-xcb-dev libfontenc-dev libice-dev libsm-dev libxaw7-dev 
 sudo apt install libxcb-util0-dev libxcb-util-dev
 cmake .. -DCMAKE_BUILD_TYPE=Debug
 cmake --build .
-
+```
 # Windows
-
+```
 conan install .. --build=missing -s build_type=Debug
 cmake .. -DCMAKE_BUILD_TYPE=Debug
 cmake --build .
-
+```
