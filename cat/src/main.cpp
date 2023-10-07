@@ -5,6 +5,14 @@
 #include <SFML/OpenGL.hpp>
 #include <math.h>
 
+void ShowObj() {
+    glBegin(GL_TRIANGLES);
+    glColor3f(0, 0, 0); glVertex2f(0, 0);
+    glColor3f(1, 0, 0); glVertex2f(0.5, 0);
+    glColor3f(0, 1, 0); glVertex2f(0, 0.5);
+    glEnd();
+}
+
 int main()
 {
     // create the window
@@ -42,59 +50,21 @@ int main()
         }
 
         // clear the buffers
-        glClearColor(0.0f, 0.5f, 0.2f, 0.0f); // цвет очистки экрана
+        glClearColor(0.7f, 1.0f, 0.7f, 0.0f); // цвет очистки экрана
         glClear(GL_COLOR_BUFFER_BIT);
-        {
-            glPointSize(10);
-            glBegin(GL_POINTS);
-            glColor3f(0, 0, 0);
-            glVertex2f(0.5, 0.5);
-            glVertex2f(-0.5, 0.5);
-            glVertex2f(0.5, -0.5);
-            glVertex2f(-0.5, -0.5);
-            glEnd();
-        }
-        {
-            glEnable(GL_LINE_STIPPLE);
-            glLineStipple(1, 0x00ff);
-            glLineWidth(5);
-            glBegin(GL_LINE_LOOP);
-            glColor3f(0, 0.4, 0);
-            glVertex2f(0.5, 0.5);
-            glVertex2f(-0.5, 0.5);
-            glColor3f(0, 0.4, 0.4);
-            glVertex2f(0.5, -0.5);
-            glVertex2f(-0.5, -0.5);
-            glEnd();
+        glLoadIdentity();
+        glScalef(0.5, 0.5, 1);
+        glTranslatef(1, 1, 0);
+        for (int i = 0; i < 7; i++) {
+            glPushMatrix();
+            //glScalef(0.3, 0.3, 1);
+            glRotatef(45*i, 0, 0, 1);
+            glTranslatef(0.5, 0, 0);
+            ShowObj();
+            glPopMatrix();
         }
 
-        {
-            glBegin(GL_TRIANGLE_STRIP);
-            glColor3f(0, 0.4, 0);
-            glVertex2f(0.5, 0.5);
-            glVertex2f(-0.5, 0.5);
-            glColor3f(1, 0.4, 0.4);
-            glVertex2f(-0.5, -0.5);
-            glColor3f(0, 1, 0);
-            glVertex2f(0.5, -0.5);
-            glEnd();
-        }
 
-        { // circle
-            float x, y;
-            float cnt = 50;
-            float l = 0.5;
-            float a = M_PI * 2 / cnt;
-            glBegin(GL_TRIANGLE_FAN);
-            glColor3f(1, 0, 1);
-            glVertex2f(0, 0);
-            for (int i = -1; i < cnt; i++) {
-                x = sin(a * i) * l;
-                y = cos(a * i) * l;
-                glVertex2f(x, y);
-            }
-            glEnd();
-        }
         
         // end the current frame (internally swaps the front and back buffers)
         window.display();
