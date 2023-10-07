@@ -1,10 +1,12 @@
+#define _USE_MATH_DEFINES
+
 #include <iostream>
 #include <SFML/Window.hpp>
 #include <SFML/OpenGL.hpp>
+#include <math.h>
 
 int main()
 {
-    float theta = 0.0f;
     // create the window
     sf::Window window(sf::VideoMode(800, 600), "OpenGL", sf::Style::Default, sf::ContextSettings(32));
     window.setVerticalSyncEnabled(true);
@@ -40,32 +42,60 @@ int main()
         }
 
         // clear the buffers
-        glClearColor(0.0f, 0.0f, 0.2f, 0.0f); // цвет очистки экрана
+        glClearColor(0.0f, 0.5f, 0.2f, 0.0f); // цвет очистки экрана
         glClear(GL_COLOR_BUFFER_BIT);
+        {
+            glPointSize(10);
+            glBegin(GL_POINTS);
+            glColor3f(0, 0, 0);
+            glVertex2f(0.5, 0.5);
+            glVertex2f(-0.5, 0.5);
+            glVertex2f(0.5, -0.5);
+            glVertex2f(-0.5, -0.5);
+            glEnd();
+        }
+        {
+            glEnable(GL_LINE_STIPPLE);
+            glLineStipple(1, 0x00ff);
+            glLineWidth(5);
+            glBegin(GL_LINE_LOOP);
+            glColor3f(0, 0.4, 0);
+            glVertex2f(0.5, 0.5);
+            glVertex2f(-0.5, 0.5);
+            glColor3f(0, 0.4, 0.4);
+            glVertex2f(0.5, -0.5);
+            glVertex2f(-0.5, -0.5);
+            glEnd();
+        }
 
-        // draw...
-        glPushMatrix();
-        glRotatef(theta, 1.0f, 0.0f, 1.0f);
+        {
+            glBegin(GL_TRIANGLE_STRIP);
+            glColor3f(0, 0.4, 0);
+            glVertex2f(0.5, 0.5);
+            glVertex2f(-0.5, 0.5);
+            glColor3f(1, 0.4, 0.4);
+            glVertex2f(-0.5, -0.5);
+            glColor3f(0, 1, 0);
+            glVertex2f(0.5, -0.5);
+            glEnd();
+        }
 
-        glBegin(GL_TRIANGLES);
-
-        glColor3f(1.0f, 0.0f, 0.0f); glVertex2f(0.0f, 0.0f);
-        glColor3f(0.0f, 1.0f, 0.0f); glVertex2f(1.0f, 0.0f);
-        glColor3f(0.0f, 0.0f, 1.0f); glVertex2f(1.0f, 1.0f);
-
-        glColor3f(1.0f, 0.0f, 0.0f); glVertex2f(0.0f, 0.0f);
-        glColor3f(0.0f, 1.0f, 0.0f); glVertex2f(0.0f, 1.0f);
-        glColor3f(0.0f, 0.0f, 1.0f); glVertex2f(1.0f, 1.0f);
-
-        glColor3f(1.0f, 0.0f, 0.0f); glVertex3f(0.0f, 0.0f, 0.0f);
-        glColor3f(0.0f, 1.0f, 0.0f); glVertex3f(0.0f, 0.0f, 1.0f);
-        glColor3f(0.0f, 0.0f, 1.0f); glVertex3f(1.0f, 0.0f, 1.0f);
-
-        glEnd();
-
-        glPopMatrix();
-        theta += 1.0f;
-
+        { // circle
+            float x, y;
+            float cnt = 50;
+            float l = 0.5;
+            float a = M_PI * 2 / cnt;
+            glBegin(GL_TRIANGLE_FAN);
+            glColor3f(1, 0, 1);
+            glVertex2f(0, 0);
+            for (int i = -1; i < cnt; i++) {
+                x = sin(a * i) * l;
+                y = cos(a * i) * l;
+                glVertex2f(x, y);
+            }
+            glEnd();
+        }
+        
         // end the current frame (internally swaps the front and back buffers)
         window.display();
     }
