@@ -6,10 +6,72 @@
 #include <math.h>
 
 float vert[] = {
-    1, 1, 1,
-   -1, 0, 0,
-    1,-1, 0
+    1, 1, 0,
+    1,-1, 0,
+   -1,-1, 0,
+   -1, 1, 0
 };
+float xAlfa = 20;
+float zAlfa = 20;
+POINTFLOAT pos = {0,0};
+
+void ShowWorld()
+{
+    glEnableClientState(GL_VERTEX_ARRAY);// указываем opengl рисовать массив вершин
+    {
+        glVertexPointer(3, GL_FLOAT, 0, &vert);
+        for (int i = -5; i < 5; i++)
+            for (int j = -5; j < 5; j++) 
+            {
+                glPushMatrix();
+                if ((i + j) % 2 == 0)
+                    glColor3f(0, 0.5, 0);
+                else
+                    glColor3f(1, 1, 1);
+                glTranslatef(i * 2, j * 2, 0);
+                glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
+                glPopMatrix();
+            }
+    }
+    glDisableClientState(GL_VERTEX_ARRAY);
+}
+void MoveCamera()
+{
+    if (sf::Keyboard::isKeyPressed(sf::Keyboard::Up))
+        xAlfa = ++xAlfa > 180 ? 180 : xAlfa;
+    if (sf::Keyboard::isKeyPressed(sf::Keyboard::Down))
+        xAlfa = --xAlfa < 0 ? 0 : xAlfa;
+    if (sf::Keyboard::isKeyPressed(sf::Keyboard::Left))
+        zAlfa = ++zAlfa;
+    if (sf::Keyboard::isKeyPressed(sf::Keyboard::Right))
+        zAlfa = --zAlfa;
+    float angle = -zAlfa / 180 * M_PI;
+    float speed = 0;
+    if (sf::Keyboard::isKeyPressed(sf::Keyboard::W))
+        speed = 0.1;
+    if (sf::Keyboard::isKeyPressed(sf::Keyboard::S))
+        speed = -0.1;
+    if (sf::Keyboard::isKeyPressed(sf::Keyboard::A))
+    {
+        speed = 0.1;
+        angle -= M_PI * 0.5;
+    }
+    if (sf::Keyboard::isKeyPressed(sf::Keyboard::D))
+    {
+        speed = 0.1;
+        angle += M_PI * 0.5;
+    }
+
+    if (speed != 0)
+    {
+        pos.x += sin(angle) * speed;
+        pos.y += cos(angle) * speed;
+    }
+
+    glRotatef(-xAlfa, 1, 0, 0);
+    glRotatef(-zAlfa, 0, 0, 1);
+    glTranslatef(-pos.x, -pos.y, -3);
+}
 
 int main()
 {
@@ -27,9 +89,7 @@ int main()
     // load resources, initialize the OpenGL states, ...
 
     glLoadIdentity();
-    //glOrtho(-7, 7, -7, 7, -7, 7);
-    glFrustum(-1,1, -1,1, 2,6);
-    glTranslatef(0, 0, -2);
+    glFrustum(-1,1, -1,1, 2,80);
 
     // run the main loop
     bool running = true;
@@ -63,25 +123,13 @@ int main()
 
         glEnable(GL_DEPTH_TEST);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-        glTranslatef(0, 0, -0.01);
-        glRotatef(0.1, 0, 0, 1);
-        glVertexPointer(3, GL_FLOAT, 0, &vert);
-        glEnableClientState(GL_VERTEX_ARRAY);
-        {
-            glColor3f(0, 1, 0);
-            glDrawArrays(GL_TRIANGLES, 0, 3);
-            {
-                glPushMatrix();
-                glColor3f(1, 0, 0);
-                glRotatef(180, 0, 0, 1);
-                //glTranslatef(1, 0, -1);
-                glDrawArrays(GL_TRIANGLES, 0, 3);
-                glPopMatrix();
-            }
 
+        glPushMatrix();
+        {
+            MoveCamera();
+            ShowWorld();
         }
-        glDisableClientState(GL_VERTEX_ARRAY);
-        
+        glPopMatrix();
         // end the current frame (internally swaps the front and back buffers)
         window.display();
     }
