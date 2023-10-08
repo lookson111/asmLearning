@@ -5,37 +5,31 @@
 #include <SFML/OpenGL.hpp>
 #include <math.h>
 
-POINTFLOAT vertices[] = {
-    {0, 0},
-    {1, 0},
-    {1, 1},
-    {0, 1}
-};
-
-float colors[] = {
-    1, 0, 0,
-    0, 1, 0,
-    0, 0, 1,
-    1, 1, 0
-};
-
-GLuint index[] = {
-    1, 2, 3, 
-    3, 0, 1
+float vert[] = {
+    1, 1, 0,
+   -1, 0, 0,
+    1,-1, 0
 };
 
 int main()
 {
-    float theta = 0.0f;
+    sf::ContextSettings window_settings;
+    window_settings.depthBits = 24; // Request a 24-bit depth buffer
+    window_settings.stencilBits = 8;  // Request a 8 bits stencil buffer
+    window_settings.antialiasingLevel = 2;  // Request 2 levels of antialiasing
     // create the window
-    sf::Window window(sf::VideoMode(800, 800), "OpenGL", sf::Style::Default);
+    sf::Window window(sf::VideoMode(800, 800), "OpenGL", sf::Style::Default, window_settings);
     window.setVerticalSyncEnabled(true);
 
     // activate the window
     window.setActive(true);
 
     // load resources, initialize the OpenGL states, ...
-    
+
+    glLoadIdentity();
+    //glOrtho(-7, 7, -7, 7, -7, 7);
+    glFrustum(-1,1, -1,1, 2,6);
+    glTranslatef(0, 0, -2);
 
     // run the main loop
     bool running = true;
@@ -66,23 +60,27 @@ int main()
 
         // clear the buffers
         glClearColor(0.7f, 1.0f, 0.7f, 0.0f); // цвет очистки экрана
-        glClear(GL_COLOR_BUFFER_BIT);
 
-        glRotatef(2, 0, 0, 1);
+        glEnable(GL_DEPTH_TEST);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        glTranslatef(0, 0, -0.01);
+        
+        glVertexPointer(3, GL_FLOAT, 0, &vert);
+        glEnableClientState(GL_VERTEX_ARRAY);
         {
-            glVertexPointer(2, GL_FLOAT, 0, &vertices);
-            glEnableClientState(GL_VERTEX_ARRAY);
-            glColorPointer(3, GL_FLOAT, 0, &colors);
-            glEnableClientState(GL_COLOR_ARRAY);
+            glColor3f(0, 1, 0);
+            glDrawArrays(GL_TRIANGLES, 0, 3);
+            {
+                glPushMatrix();
+                glColor3f(1, 0, 0);
+                glTranslatef(1, 0, -1);
+                glDrawArrays(GL_TRIANGLES, 0, 3);
+                glPopMatrix();
+            }
 
-            
-            //glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
-            glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, &index);
-
-
-            glDisableClientState(GL_VERTEX_ARRAY);
-            glDisableClientState(GL_COLOR_ARRAY);
         }
+        glDisableClientState(GL_VERTEX_ARRAY);
+        
         // end the current frame (internally swaps the front and back buffers)
         window.display();
     }
