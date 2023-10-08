@@ -3,134 +3,67 @@
 #include <iostream>
 #include <SFML/Window.hpp>
 #include <SFML/OpenGL.hpp>
-#include <math.h>
 
-static constexpr float boxLine = 1;
-float boxEdge[] = {
-    boxLine, boxLine, 0,
-    boxLine,-boxLine, 0,
-   -boxLine,-boxLine, 0,
-   -boxLine, boxLine, 0
+using namespace std::literals;
+
+int width = 1200;
+int height = 600;
+
+struct TButton {
+    std::string_view name;
+    float vert[8];
+    BOOL hover;
 };
 
 float vert[] = {
-    1, 1, 0,
-    1,-1, 0,
-   -1,-1, 0,
-   -1, 1, 0
+    0,0,0,
+    0,1,0,
+    1,0,0
 };
-float xAlfa = 20;
-float zAlfa = 20;
-POINTFLOAT pos = {0,0};
 
-void ShowWorld()
+std::vector<TButton> btns = {
+    {"start"sv, {0,0,  100,0,  100,30,  0,30},  FALSE}, 
+    {"stop"sv,  {0,40, 100,40, 100,70,  0,70},  FALSE},
+    {"quit"sv,  {0,80, 100,80, 100,110, 0,110}, FALSE}
+};
+
+void TButton_Show(const TButton& btn)
 {
-    glEnableClientState(GL_VERTEX_ARRAY);// указываем opengl рисовать массив вершин
-    {
-        glVertexPointer(3, GL_FLOAT, 0, &vert);
-        for (int i = -5; i < 5; i++)
-            for (int j = -5; j < 5; j++) 
-            {
-                glPushMatrix();
-                if ((i + j) % 2 == 0)
-                    glColor3f(0, 0.5, 0);
-                else
-                    glColor3f(1, 1, 1);
-                glTranslatef(i * 2, j * 2, 0);
-                glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
-                glPopMatrix();
-            }
-        
-    }
+    glEnableClientState(GL_VERTEX_ARRAY);
+    if (btn.hover)
+        glColor3f(1, 0, 0);
+    else 
+        glColor3f(0, 1, 0);
+    glVertexPointer(2, GL_FLOAT, 0, btn.vert);
+    glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
+
     glDisableClientState(GL_VERTEX_ARRAY);
 }
 
-void ShowBox() 
+BOOL PointInButton(int x, int y, TButton btn)
 {
-    float boxScale = 1.2;
-    glEnableClientState(GL_VERTEX_ARRAY);// указываем opengl рисовать массив вершин
-    {
-        glVertexPointer(3, GL_FLOAT, 0, &boxEdge);
-        glColor3f(0.5, 0, 0.1);
-        {
-            glPushMatrix();
-            glTranslatef(0, 0, boxLine / 2);
-            glTranslatef(boxLine, 0, 0);
-            glRotatef(90, 1, 0, 0);
-            glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
-            glPopMatrix();
-        }
-        {
-            glPushMatrix();
-            glTranslatef(0, 0, boxLine / 2);
-            glTranslatef(0, boxLine, 0);
-            glRotatef(90, 0, 1, 0);
-            glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
-            glPopMatrix();
-        }
-        {
-            glPushMatrix();
-            glTranslatef(0, 0, boxLine / 2);
-            glTranslatef(boxLine * 2, boxLine, 0);
-            glRotatef(90, 0, 1, 0);
-            glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
-            glPopMatrix();
-        }
-        {
-            glPushMatrix();
-            glTranslatef(0, 0, boxLine / 2);
-            glTranslatef(boxLine, boxLine * 2, 0);
-            glRotatef(90, 1, 0, 0);
-            glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
-            glPopMatrix();
-        }
-        glColor3f(0.0, 0.5, 0.1);
-        {
-            glPushMatrix();
-            glTranslatef(0, 0, boxLine*1.5);
-            glTranslatef(boxLine, boxLine, 0);
-            glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
-            glPopMatrix();
-        }
-    }
-    glDisableClientState(GL_VERTEX_ARRAY);
+    return (x > btn.vert[0]) && (x < btn.vert[4]) &&
+        (y > btn.vert[1]) && (y < btn.vert[5]);
 }
-void MoveCamera()
+
+void ShowMenu()
 {
-    if (sf::Keyboard::isKeyPressed(sf::Keyboard::Up))
-        xAlfa = ++xAlfa > 180 ? 180 : xAlfa;
-    if (sf::Keyboard::isKeyPressed(sf::Keyboard::Down))
-        xAlfa = --xAlfa < 0 ? 0 : xAlfa;
-    if (sf::Keyboard::isKeyPressed(sf::Keyboard::Left))
-        zAlfa = ++zAlfa;
-    if (sf::Keyboard::isKeyPressed(sf::Keyboard::Right))
-        zAlfa = --zAlfa;
-    float angle = -zAlfa / 180 * M_PI;
-    float speed = 0;
-    if (sf::Keyboard::isKeyPressed(sf::Keyboard::W))
-        speed = 0.1;
-    if (sf::Keyboard::isKeyPressed(sf::Keyboard::S))
-        speed = -0.1;
-    if (sf::Keyboard::isKeyPressed(sf::Keyboard::A))
-    {
-        speed = 0.1;
-        angle -= M_PI * 0.5;
-    }
-    if (sf::Keyboard::isKeyPressed(sf::Keyboard::D))
-    {
-        speed = 0.1;
-        angle += M_PI * 0.5;
-    }
+    glPushMatrix();
+    
+    glLoadIdentity();
+    glOrtho(0, width, height, 0, -1, 1);
+    for(const auto& btn:btns)
+        TButton_Show(btn);
 
-    if (speed != 0)
-    {
-        pos.x += sin(angle) * speed;
-        pos.y += cos(angle) * speed;
-    }
+    glPopMatrix();
+}
 
-    glRotatef(-xAlfa, 1, 0, 0);
-    glRotatef(-zAlfa, 0, 0, 1);
-    glTranslatef(-pos.x, -pos.y, -3);
+void ResizeWindow(int w, int h)
+{
+    glViewport(0, 0, w, h);
+    glLoadIdentity();
+    float k = (float)w / (float)h;
+    glOrtho(-k, k, -1, 1, -1, 1);
 }
 
 int main()
@@ -140,7 +73,7 @@ int main()
     window_settings.stencilBits = 8;  // Request a 8 bits stencil buffer
     window_settings.antialiasingLevel = 2;  // Request 2 levels of antialiasing
     // create the window
-    sf::Window window(sf::VideoMode(800, 800), "OpenGL", sf::Style::Default, window_settings);
+    sf::Window window(sf::VideoMode(width, height), "OpenGL", sf::Style::Default, window_settings);
     window.setVerticalSyncEnabled(true);
 
     // activate the window
@@ -148,9 +81,9 @@ int main()
 
     // load resources, initialize the OpenGL states, ...
 
-    glLoadIdentity();
-    glFrustum(-1,1, -1,1, 2,80);
-
+    //glLoadIdentity();
+    //glFrustum(-1,1, -1,1, 2,80);
+    ResizeWindow(width, height);
     // run the main loop
     bool running = true;
     while (running)
@@ -164,15 +97,33 @@ int main()
             case sf::Event::Closed:
                 running = false;
                 break;
-            case sf::Event::Resized:
-                window.setSize({ static_cast<unsigned int>(event.size.width), static_cast<unsigned int>(event.size.height) });
-                break;
+            case sf::Event::Resized: {
+                width = event.size.width;
+                height = event.size.height;
+                ResizeWindow(width, height);
+                break; 
+            }
             case sf::Event::KeyPressed:
                 if (event.key.code == sf::Keyboard::Escape)
                     running = false;
                 break;
             case sf::Event::MouseWheelScrolled:
                 break;
+            case sf::Event::MouseButtonPressed: {
+                for (const auto& btn : btns) {
+                    if (PointInButton(event.mouseButton.x, event.mouseButton.y, btn)) 
+                    {
+                        std::cout << btn.name << std::endl;
+                        if (btn.name == "quit"sv)
+                            running = false;
+                    }
+                }
+                break;
+            }
+            case sf::Event::MouseMoved: {
+                for (auto& btn : btns)
+                    btn.hover = PointInButton(event.mouseMove.x, event.mouseMove.y, btn);
+            }
             default:
                 break;
             }
@@ -180,19 +131,11 @@ int main()
 
         // clear the buffers
         glClearColor(0.7f, 1.0f, 0.7f, 0.0f); // цвет очистки экрана
+        glClear(GL_COLOR_BUFFER_BIT);
 
-        glEnable(GL_DEPTH_TEST);
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        glPushMatrix();
-        {
-            MoveCamera();
-            ShowWorld();
-            ShowBox();
-            glTranslatef(3, 0, 0);
-            ShowBox();
-        }
-        glPopMatrix();
+        ShowMenu();
+
         // end the current frame (internally swaps the front and back buffers)
         window.display();
     }
