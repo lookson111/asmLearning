@@ -5,6 +5,14 @@
 #include <SFML/OpenGL.hpp>
 #include <math.h>
 
+static constexpr float boxLine = 1;
+float boxEdge[] = {
+    boxLine, boxLine, 0,
+    boxLine,-boxLine, 0,
+   -boxLine,-boxLine, 0,
+   -boxLine, boxLine, 0
+};
+
 float vert[] = {
     1, 1, 0,
     1,-1, 0,
@@ -32,6 +40,58 @@ void ShowWorld()
                 glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
                 glPopMatrix();
             }
+        
+    }
+    glDisableClientState(GL_VERTEX_ARRAY);
+}
+
+void ShowBox() 
+{
+    float boxScale = 1.2;
+    glEnableClientState(GL_VERTEX_ARRAY);// указываем opengl рисовать массив вершин
+    {
+        glVertexPointer(3, GL_FLOAT, 0, &boxEdge);
+        glColor3f(0.5, 0, 0.1);
+        {
+            glPushMatrix();
+            glTranslatef(0, 0, boxLine / 2);
+            glTranslatef(boxLine, 0, 0);
+            glRotatef(90, 1, 0, 0);
+            glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
+            glPopMatrix();
+        }
+        {
+            glPushMatrix();
+            glTranslatef(0, 0, boxLine / 2);
+            glTranslatef(0, boxLine, 0);
+            glRotatef(90, 0, 1, 0);
+            glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
+            glPopMatrix();
+        }
+        {
+            glPushMatrix();
+            glTranslatef(0, 0, boxLine / 2);
+            glTranslatef(boxLine * 2, boxLine, 0);
+            glRotatef(90, 0, 1, 0);
+            glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
+            glPopMatrix();
+        }
+        {
+            glPushMatrix();
+            glTranslatef(0, 0, boxLine / 2);
+            glTranslatef(boxLine, boxLine * 2, 0);
+            glRotatef(90, 1, 0, 0);
+            glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
+            glPopMatrix();
+        }
+        glColor3f(0.0, 0.5, 0.1);
+        {
+            glPushMatrix();
+            glTranslatef(0, 0, boxLine*1.5);
+            glTranslatef(boxLine, boxLine, 0);
+            glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
+            glPopMatrix();
+        }
     }
     glDisableClientState(GL_VERTEX_ARRAY);
 }
@@ -128,6 +188,9 @@ int main()
         {
             MoveCamera();
             ShowWorld();
+            ShowBox();
+            glTranslatef(3, 0, 0);
+            ShowBox();
         }
         glPopMatrix();
         // end the current frame (internally swaps the front and back buffers)
