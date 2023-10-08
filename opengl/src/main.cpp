@@ -5,61 +5,24 @@
 #include <SFML/OpenGL.hpp>
 #include <math.h>
 
-POINTFLOAT* mas = nullptr;
-int cnt;
-float scaleY = 1;
-float curX;
+POINTFLOAT vertices[] = {
+    {0, 0},
+    {1, 0},
+    {1, 1},
+    {0, 1}
+};
 
-void DrawOs(float alfa) {
-    static float d = 0.05;
-    glPushMatrix();
-    glRotatef(alfa, 0, 0, 1);
-    {
-        glBegin(GL_LINES);
-        glVertex2f(-1, 0);
-        glVertex2f(1, 0);
-        glVertex2f(1, 0);
-        glVertex2f(1 - d, 0 + d);
-        glVertex2f(1, 0);
-        glVertex2f(1 - d, 0 - d);
-        glEnd();
-    }
-    glPopMatrix();
-}
+float colors[] = {
+    1, 0, 0,
+    0, 1, 0,
+    0, 0, 1,
+    1, 1, 0
+};
 
-void Init(float start, float finish, int count)
-{
-    cnt = count;
-    mas = new POINTFLOAT[cnt];
-    float dx = (finish - start) / (cnt - 1);
-    for (int i = 0; i < cnt; i++) 
-    {
-        mas[i].x = start;
-        mas[i].y = sin(start);
-        start += dx;
-    }
-}
-void Show()
-{
-    float sx = 2.0 / (mas[cnt - 1].x - mas[0].x);
-    float dx = (mas[cnt - 1].x + mas[0].x) * 0.5;
-    glPushMatrix();
-    glScalef(sx, scaleY, 1);
-    glTranslatef(-dx, 0, 0);
-    glBegin(GL_LINE_STRIP);
-    for (int i = 0; i < cnt; i++) 
-        glVertex2f(mas[i].x, mas[i].y);
-    glEnd();
-    glPopMatrix();
-}
-
-void Add(float x, float y) 
-{
-    for (int i = 1; i < cnt; i++)
-        mas[i - 1] = mas[i];
-    mas[cnt - 1].x = x;
-    mas[cnt - 1].y = y;
-}
+GLuint index[] = {
+    1, 2, 3, 
+    3, 0, 1
+};
 
 int main()
 {
@@ -72,8 +35,8 @@ int main()
     window.setActive(true);
 
     // load resources, initialize the OpenGL states, ...
-    curX = 10;
-    Init(10, curX, 100);
+    
+
     // run the main loop
     bool running = true;
     while (running)
@@ -95,12 +58,6 @@ int main()
                     running = false;
                 break;
             case sf::Event::MouseWheelScrolled:
-                if ((int)event.mouseWheelScroll.delta > 0)
-                    scaleY *= 1.5;
-                else
-                    scaleY *= 0.7;
-                if (scaleY < 0.02)
-                    scaleY = 0.02;
                 break;
             default:
                 break;
@@ -110,17 +67,22 @@ int main()
         // clear the buffers
         glClearColor(0.7f, 1.0f, 0.7f, 0.0f); // цвет очистки экрана
         glClear(GL_COLOR_BUFFER_BIT);
-        glLoadIdentity();
-        glLineWidth(2);
-        glColor3f(1, 0, 0);
-        DrawOs(0);
-        glColor3f(0, 1, 0);
-        DrawOs(90);
 
-        curX += 0.1;
-        Add(curX, sin(curX));
-        glColor3f(0, 1, 1);
-        Show();
+        glRotatef(2, 0, 0, 1);
+        {
+            glVertexPointer(2, GL_FLOAT, 0, &vertices);
+            glEnableClientState(GL_VERTEX_ARRAY);
+            glColorPointer(3, GL_FLOAT, 0, &colors);
+            glEnableClientState(GL_COLOR_ARRAY);
+
+            
+            //glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
+            glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, &index);
+
+
+            glDisableClientState(GL_VERTEX_ARRAY);
+            glDisableClientState(GL_COLOR_ARRAY);
+        }
         // end the current frame (internally swaps the front and back buffers)
         window.display();
     }
