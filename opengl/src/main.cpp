@@ -3,6 +3,7 @@
 #include <iostream>
 #include <SFML/Window.hpp>
 #include <SFML/OpenGL.hpp>
+#include <math.h>
 
 using namespace std::literals;
 
@@ -13,12 +14,15 @@ static constexpr int pW = 40;
 static constexpr int pH = 40;
 static constexpr int enemyCnt = 40;
 
-BOOL showMask = FALSE;
+bool showMask = false;
 
 float kube[] = { 0,0,0, 0,1,0, 1,1,0, 1,0,0, 0,0,1, 0,1,1, 1,1,1, 1,0,1 }; // массив вершин 
 GLuint kubeInd[] = {0,1,2, 2,3,0, 4,5,6, 6,7,4, 3,2,5, 6,7,3, 0,1,5, 5,4,0, // массив граней
                     1,2,6, 6,5,1, 0,3,7, 7,4,0};
 
+struct TPoint {
+    int x, y;
+};
 
 struct TColor {
     float r, g, b;
@@ -36,7 +40,7 @@ struct {
 
 struct {
     float x, y, z;
-    BOOL active;
+    bool active;
 } enemy[enemyCnt];
 
 void Enemy_Init()
@@ -90,12 +94,11 @@ void CameraRotation(float xAngle, float zAngle)
         camera.xRot = 180;
 }
 
-void PlayerMove(sf::Window* window)
+void PlayerMove(sf::Window& window)
 {   
-    if (!window->hasFocus())
+    if (!window.hasFocus())
         return;
-    static POINT base = { 400, 300 };
-    POINT cur;
+    static sf::Vector2i base = { width/2, height/2 };
 
     float angle = -camera.zRot / 180 * M_PI;
     float speed = 0;
@@ -118,10 +121,9 @@ void PlayerMove(sf::Window* window)
         camera.x += sin(angle) * speed;
         camera.y += cos(angle) * speed;
     }
-
-    GetCursorPos(&cur);
-    CameraRotation((base.y - cur.y) / 5.0, (base.x - cur.x) / 5.0);
-    SetCursorPos(base.x, base.y);
+    sf::Vector2i cur = sf::Mouse::getPosition(window);
+    CameraRotation((base.y - cur.y) / 15.0, (base.x - cur.x) / 15.0);
+    sf::Mouse::setPosition(base, window);
 }
 
 void MapInit()
@@ -140,7 +142,7 @@ void MapInit()
 
 void ResizeWindow(int w, int h);
 
-void GameMove(sf::Window* window) {
+void GameMove(sf::Window& window) {
     PlayerMove(window);
 }
 
@@ -189,19 +191,17 @@ void GameShow()
     glPopMatrix();
 }
 
-void PlayerShoot(sf::Window* window)
+void PlayerShoot(sf::Window& window)
 {
-    showMask = TRUE;
+    showMask = true;
     GameShow();
-    showMask = FALSE;
-    RECT rct;
+    showMask = false;
     GLubyte clr[3];
-    auto hwnd = window->getSystemHandle();
-    GetClientRect(hwnd, &rct);
-    glReadPixels(rct.right / 2.0, rct.bottom / 2.0, 1,1,
+    clr[0] = 0;
+    glReadPixels(width / 2.0, height / 2.0, 1,1,
         GL_RGB, GL_UNSIGNED_BYTE, clr);
     if (clr[0] > 0)
-        enemy[255-clr[0]].active = FALSE;
+        enemy[255-clr[0]].active = false;
 }
 
 
@@ -223,7 +223,7 @@ int main()
     // create the window
     sf::Window window(sf::VideoMode(width, height), "OpenGL", sf::Style::Default, window_settings);
     window.setVerticalSyncEnabled(true);
-
+    window.setMouseCursorGrabbed(true);
     // activate the window
     window.setActive(true);
 
@@ -255,16 +255,15 @@ int main()
             case sf::Event::MouseWheelScrolled:
                 break;
             case sf::Event::MouseButtonPressed: {
-                PlayerShoot(&window);
+                PlayerShoot(window);
                 break;
             }
             case sf::Event::MouseEntered: {
-                ShowCursor(FALSE);
-
-                //PlayerMove(event.mouseMove.x, event.mouseMove.y);
+                //window.setMouseCursorVisible(false);
             }
             case sf::Event::MouseMoved: {
-                //PlayerMove(event.mouseMove.x, event.mouseMove.y);
+                std::cout << "new mouse x: " << event.mouseMove.x << std::endl;
+                std::cout << "new mouse y: " << event.mouseMove.y << std::endl;
             }
             default:
                 break;
@@ -272,7 +271,7 @@ int main()
         }
 
         // clear the buffers
-        GameMove(&window);
+        GameMove(window);
         GameShow();
 
 
