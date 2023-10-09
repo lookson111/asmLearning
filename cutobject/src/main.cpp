@@ -262,8 +262,8 @@ int main()
                 //window.setMouseCursorVisible(false);
             }
             case sf::Event::MouseMoved: {
-                std::cout << "new mouse x: " << event.mouseMove.x << std::endl;
-                std::cout << "new mouse y: " << event.mouseMove.y << std::endl;
+                //std::cout << "new mouse x: " << event.mouseMove.x << std::endl;
+                //std::cout << "new mouse y: " << event.mouseMove.y << std::endl;
             }
             default:
                 break;
