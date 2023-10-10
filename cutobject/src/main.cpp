@@ -7,14 +7,27 @@
 
 using namespace std::literals;
 
-int width = 1200;
-int height = 600;
+static constexpr float dAxes = 100.0f;
 
-static constexpr int pW = 40;
-static constexpr int pH = 40;
-static constexpr int enemyCnt = 40;
+static int width = 1200;
+static int height = 600;
 
-bool showMask = false;
+static constexpr GLfloat axesLine[]{
+    dAxes, 0, 0,
+   -dAxes, 0, 0,
+    0, dAxes, 0,
+    0,-dAxes, 0,
+    0, 0, dAxes,
+    0, 0,-dAxes
+};
+static constexpr GLfloat axesColor[]{
+    1, 0, 0,
+    1, 0, 0,
+    0, 1, 0,
+    0, 1, 0,
+    0, 0, 1,
+    0, 0, 1
+};
 
 float kube[] = { 0,0,0, 0,1,0, 1,1,0, 1,0,0, 0,0,1, 0,1,1, 1,1,1, 1,0,1 }; // массив вершин 
 GLuint kubeInd[] = {0,1,2, 2,3,0, 4,5,6, 6,7,4, 3,2,5, 6,7,3, 0,1,5, 5,4,0, // массив граней
@@ -31,50 +44,27 @@ struct TCell {
     TColor clr;
 };
 
-TCell map[pW][pH];
-
 struct {
     float x, y, z;
     float xRot, zRot;
 } camera = { 0,0,1.7, 70,-40 };
 
-struct {
+struct Object {
+    std::vector<float> xyz;
     float x, y, z;
-    bool active;
-} enemy[enemyCnt];
+};
 
-void Enemy_Init()
+void ResizeWindow(int w, int h)
 {
-    for (int i = 0; i < enemyCnt; i++)
-    {
-        enemy[i].active = true;
-        enemy[i].x = rand() % pW;
-        enemy[i].y = rand() % pH;
-        enemy[i].z = rand() % 5;
-    }
+    glViewport(0, 0, w, h);
+    glLoadIdentity();
+    float k = (float)w / (float)h;
+    float sz = 0.2;
+    glFrustum(-k * sz, k * sz, -sz, sz, sz * 2, 10000);
 }
 
-void EnemyShow()
-{
-    glEnableClientState(GL_VERTEX_ARRAY);
-    glVertexPointer(3, GL_FLOAT, 0, kube);
-    for (int i = 0; i < enemyCnt; i++)
-    {
-        if (!enemy[i].active)
-            continue;
-        glPushMatrix();
-        glTranslatef(enemy[i].x, enemy[i].y, enemy[i].z);
-        if (showMask)
-            glColor3ub(255-i, 0, 0);
-        else
-            glColor3ub(244, 60, 43);
-        glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, kubeInd);
-        glPopMatrix();
-    }
-    glDisableClientState(GL_VERTEX_ARRAY);
-}
 
-void Camera_Apply() {
+void CameraApply() {
     glRotatef(-camera.xRot, 1, 0, 0);
     glRotatef(-camera.zRot, 0, 0, 1);
     glTranslatef(-camera.x, -camera.y, -camera.z);
@@ -94,28 +84,33 @@ void CameraRotation(float xAngle, float zAngle)
         camera.xRot = 180;
 }
 
-void PlayerMove(sf::Window& window)
-{   
+void CameraMove(sf::Window& window)
+{
     if (!window.hasFocus())
         return;
-    static sf::Vector2i base = { width/2, height/2 };
+    static sf::Vector2i base = { width / 2, height / 2 };
+    static constexpr float baseSpeed = 0.1;
 
     float angle = -camera.zRot / 180 * M_PI;
     float speed = 0;
     if (sf::Keyboard::isKeyPressed(sf::Keyboard::W))
-        speed = 0.1;
+        speed = baseSpeed;
     if (sf::Keyboard::isKeyPressed(sf::Keyboard::S))
-        speed = -0.1;
+        speed = -baseSpeed;
     if (sf::Keyboard::isKeyPressed(sf::Keyboard::A))
     {
-        speed = 0.1;
+        speed = baseSpeed;
         angle -= M_PI * 0.5;
     }
     if (sf::Keyboard::isKeyPressed(sf::Keyboard::D))
     {
-        speed = 0.1;
+        speed = baseSpeed;
         angle += M_PI * 0.5;
     }
+    if (sf::Keyboard::isKeyPressed(sf::Keyboard::Space))
+        camera.z += baseSpeed;
+    if (sf::Keyboard::isKeyPressed(sf::Keyboard::LShift))
+        camera.z -= baseSpeed;
     if (speed != 0)
     {
         camera.x += sin(angle) * speed;
@@ -126,93 +121,73 @@ void PlayerMove(sf::Window& window)
     sf::Mouse::setPosition(base, window);
 }
 
-void MapInit()
+void ObjectInit()
 {
-    for (int i = 0; i < pW; i++)
+
+}
+
+void ObjectShow()
+{
+    glEnableClientState(GL_VERTEX_ARRAY);
+    glVertexPointer(3, GL_FLOAT, 0, kube);
+    for (int i = 0; i < 1/*objectcnt*/; i++)
     {
-        for (int j = 0; j < pH; j++)
-        {
-            float dc = (rand() % 20) * 0.01;
-            map[i][j].clr.r = 0.31 + dc;
-            map[i][j].clr.g = 0.5  + dc;
-            map[i][j].clr.b = 0.13 + dc;
-        }
+        glPushMatrix();
+        glColor3ub(244, 60, 43);
+        glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, kubeInd);
+        glPopMatrix();
     }
+    glDisableClientState(GL_VERTEX_ARRAY);
 }
 
-void ResizeWindow(int w, int h);
 
-void GameMove(sf::Window& window) {
-    PlayerMove(window);
+void PlainInit()
+{
 }
 
-void GameInit()
+void SpaceInit()
 {
     glEnable(GL_DEPTH_TEST);
-
-    MapInit();
-    Enemy_Init();
+    PlainInit();
+    ObjectInit();
     ResizeWindow(width, height);
 }
-
-void GameShow()
+void CoordinateAxesShow()
 {
-    if (showMask)
-        glClearColor(0, 0, 0, 0);
-    else
-        glClearColor(0.6, 0.8, 1, 0);
+    glLineWidth(2);
+    //glColor3ub(2, 134, 43);
+    glVertexPointer(3, GL_FLOAT, 0, &axesLine);
+    glEnableClientState(GL_VERTEX_ARRAY);
+    glColorPointer(3, GL_FLOAT, 0, &axesColor);
+    glEnableClientState(GL_COLOR_ARRAY);
+    glDrawArrays(GL_LINES, 0, 6);
+    glDisableClientState(GL_VERTEX_ARRAY);
+    glDisableClientState(GL_COLOR_ARRAY);
+    
+}
+void SpaceShow()
+{
+    glClearColor(0.6, 0.8, 1, 0);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
     glPushMatrix();
     {
-        Camera_Apply();
+        CameraApply();
+        CoordinateAxesShow();
         glEnableClientState(GL_VERTEX_ARRAY);
         glVertexPointer(3, GL_FLOAT, 0, kube);
-
-        for (int i = 0; i < pW; i++)
+        glPushMatrix();
         {
-            for (int j = 0; j < pH; j++)
-            {
-                glPushMatrix();
-                {
-                    glTranslatef(i, j, 0);
-                    if (showMask)
-                        glColor3f(0, 0, 0);
-                    else
-                        glColor3f(map[i][j].clr.r, map[i][j].clr.g, map[i][j].clr.b);
-                    glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, kubeInd);
-                }
-                glPopMatrix();
-            }
+            glColor3ui(234, 142, 13);
+            glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, kubeInd);
         }
+        glPopMatrix();
         glDisableClientState(GL_VERTEX_ARRAY);
-        EnemyShow();
+        ObjectShow();
     }
     glPopMatrix();
 }
 
-void PlayerShoot(sf::Window& window)
-{
-    showMask = true;
-    GameShow();
-    showMask = false;
-    GLubyte clr[3];
-    clr[0] = 0;
-    glReadPixels(width / 2.0, height / 2.0, 1,1,
-        GL_RGB, GL_UNSIGNED_BYTE, clr);
-    if (clr[0] > 0)
-        enemy[255-clr[0]].active = false;
-}
 
-
-void ResizeWindow(int w, int h)
-{
-    glViewport(0, 0, w, h);
-    glLoadIdentity();
-    float k = (float)w / (float)h;
-    float sz = 0.1;
-    glFrustum(-k*sz,k*sz, -sz,sz, sz * 2, 100);
-}
 
 int main()
 {
@@ -228,7 +203,7 @@ int main()
     window.setActive(true);
 
     // load resources, initialize the OpenGL states, ...
-    GameInit();
+    SpaceInit();
     // run the main loop
     bool running = true;
     while (running)
@@ -255,7 +230,6 @@ int main()
             case sf::Event::MouseWheelScrolled:
                 break;
             case sf::Event::MouseButtonPressed: {
-                PlayerShoot(window);
                 break;
             }
             case sf::Event::MouseEntered: {
@@ -271,8 +245,8 @@ int main()
         }
 
         // clear the buffers
-        GameMove(window);
-        GameShow();
+        CameraMove(window);
+        SpaceShow();
 
 
         // end the current frame (internally swaps the front and back buffers)
