@@ -7,37 +7,22 @@
 
 using namespace std::literals;
 
-static constexpr float dAxes = 10.0f;
+static constexpr float dAxes = 100.0f;
 static constexpr float wAxes = 0.01f;
 
 static int width = 1200;
 static int height = 600;
 
-static constexpr GLfloat axesLine[]{
-    dAxes, 0, 0,
-   -dAxes, 0, 0,
-    0, dAxes, 0,
-    0,-dAxes, 0,
-    0, 0, dAxes,
-    0, 0,-dAxes
-};
-static constexpr GLfloat axesColor[]{
-    1, 0, 0,
-    1, 0, 0,
-    0, 1, 0,
-    0, 1, 0,
-    0, 0, 1,
-    0, 0, 1
-};
 
 float kube[] = { 0,0,0, 0,1,0, 1,1,0, 1,0,0, 0,0,1, 0,1,1, 1,1,1, 1,0,1 }; // массив вершин 
 GLuint kubeInd[] = {0,1,2, 2,3,0, 4,5,6, 6,7,4, 3,2,5, 6,7,3, 0,1,5, 5,4,0, // массив граней
                     1,2,6, 6,5,1, 0,3,7, 7,4,0};
-float axes[] = { 0, wAxes,-dAxes, wAxes,-wAxes,-dAxes, -wAxes,-wAxes,-dAxes, 
-    0,wAxes,dAxes, wAxes,-wAxes,dAxes, -wAxes,-wAxes,dAxes};
+float axes[] = { 
+    0, wAxes,-dAxes, wAxes,-wAxes,-dAxes, -wAxes,-wAxes,-dAxes, 
+    0, wAxes, dAxes, wAxes,-wAxes, dAxes, -wAxes,-wAxes, dAxes};
 GLuint axesInd[] = { 0,3,4, 4,1,0, 1,4,5, 5,2,1, 2,5,3, 3,0,2 }; 
 
-float plainInSegment[] = {-100, -100, -100, 3};
+float plainInSegment[] = {-1, -1, -1, 1};
 
 struct TPoint {
     int x, y;
@@ -128,11 +113,6 @@ void CameraMove(sf::Window& window)
     sf::Mouse::setPosition(base, window);
 }
 
-void ObjectInit()
-{
-
-}
-
 void ObjectShow()
 {
     glEnableClientState(GL_VERTEX_ARRAY);
@@ -155,25 +135,25 @@ void PlainShow()
     //1
     plain.push_back(0.0f);
     plain.push_back(dAxes);
-    plain.push_back((-p[4]-p[1]*dAxes)/p[2]);
+    plain.push_back((-p[3]-p[1]*dAxes)/p[2]);
     //6
     plain.push_back(-dAxes);
-    plain.push_back((-p[4]+ p[0] * dAxes) / p[1]);
+    plain.push_back((-p[3]+ p[0] * dAxes) / p[1]);
     plain.push_back(0.0f);
     //2
-    plain.push_back((-p[4] - p[2] * dAxes) / p[0]);
+    plain.push_back((-p[3] - p[2] * dAxes) / p[0]);
     plain.push_back(0.0f);
     plain.push_back(dAxes);
     //4
     plain.push_back(0.0f);
     plain.push_back(-dAxes);
-    plain.push_back((-p[4] + p[1] * dAxes) / p[2]);
+    plain.push_back((-p[3] + p[1] * dAxes) / p[2]);
     //3
     plain.push_back(dAxes);
-    plain.push_back((-p[4] - p[0] * dAxes) / p[1]);
+    plain.push_back((-p[3] - p[0] * dAxes) / p[1]);
     plain.push_back(0.0f);
     //5
-    plain.push_back((-p[4] + p[2] * dAxes) / p[0]);
+    plain.push_back((-p[3] + p[2] * dAxes) / p[0]);
     plain.push_back(0.0f);
     plain.push_back(-dAxes);
 
@@ -183,29 +163,27 @@ void PlainShow()
         glColor3ub(54, 100, 234);
         glVertexPointer(3, GL_FLOAT, 0, plain.data());
         glEnableClientState(GL_VERTEX_ARRAY);
-        glDrawArrays(GL_TRIANGLE_FAN, 0, 6);
+        glDrawArrays(GL_TRIANGLE_FAN, 0, plain.size()/3);
         glDisableClientState(GL_VERTEX_ARRAY);
     }
     glDisable(GL_BLEND);
 }
 
-void AxesShow();
-
 void SpaceInit()
 {
     glEnable(GL_DEPTH_TEST);
-    ObjectInit();
     ResizeWindow(width, height);
 }
 void AxesShow()
 {
-    std::vector<TColor> colors = {{255,0,0}, {0,255,0}, {0,0,255}};
+    std::vector<TColor> colors = {{255,222,0}, {0,255,0}, {0,0,255}};
     std::vector<FPoint> rot = {{0,0,0}, {0,1,0}, {1,0,0}};
     glVertexPointer(3, GL_FLOAT, 0, &axes);
     glEnableClientState(GL_VERTEX_ARRAY);
     for (int i = 0; i < 3; i++) {
         glPushMatrix();
-        glRotatef(90, rot[i].x, rot[i].y, rot[i].z);
+        if (i) // fix in windows
+            glRotatef(90, rot[i].x, rot[i].y, rot[i].z);
         glColor3ub(colors[i].r, colors[i].g, colors[i].b);
         glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, axesInd);
         glPopMatrix();
@@ -217,6 +195,7 @@ void SpaceShow()
 {
     glClearColor(0.6, 0.8, 1, 0);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
     glPushMatrix();
     {
         CameraApply();
