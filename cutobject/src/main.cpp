@@ -8,6 +8,7 @@
 using namespace std::literals;
 
 static constexpr float dAxes = 10.0f;
+static constexpr float wAxes = 0.01f;
 
 static int width = 1200;
 static int height = 600;
@@ -32,6 +33,9 @@ static constexpr GLfloat axesColor[]{
 float kube[] = { 0,0,0, 0,1,0, 1,1,0, 1,0,0, 0,0,1, 0,1,1, 1,1,1, 1,0,1 }; // массив вершин 
 GLuint kubeInd[] = {0,1,2, 2,3,0, 4,5,6, 6,7,4, 3,2,5, 6,7,3, 0,1,5, 5,4,0, // массив граней
                     1,2,6, 6,5,1, 0,3,7, 7,4,0};
+float axes[] = { 0, wAxes,-dAxes, wAxes,-wAxes,-dAxes, -wAxes,-wAxes,-dAxes, 
+    0,wAxes,dAxes, wAxes,-wAxes,dAxes, -wAxes,-wAxes,dAxes};
+GLuint axesInd[] = { 0,3,4, 4,1,0, 1,4,5, 5,2,1, 2,5,3, 3,0,2 }; 
 
 float plainInSegment[] = {-100, -100, -100, 3};
 
@@ -39,11 +43,12 @@ struct TPoint {
     int x, y;
 };
 
-struct TColor {
-    float r, g, b;
+struct FPoint {
+    float x, y, z;
 };
-struct TCell {
-    TColor clr;
+
+struct TColor {
+    GLubyte r, g, b;
 };
 
 struct {
@@ -174,8 +179,8 @@ void PlainShow()
 
     glEnable(GL_BLEND);
     {
-        glBlendFunc(GL_ONE, GL_ONE);
-        glColor3ub(54, 76, 234);
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+        glColor3ub(54, 100, 234);
         glVertexPointer(3, GL_FLOAT, 0, plain.data());
         glEnableClientState(GL_VERTEX_ARRAY);
         glDrawArrays(GL_TRIANGLE_FAN, 0, 6);
@@ -184,23 +189,28 @@ void PlainShow()
     glDisable(GL_BLEND);
 }
 
+void AxesShow();
+
 void SpaceInit()
 {
     glEnable(GL_DEPTH_TEST);
-    PlainShow();
     ObjectInit();
     ResizeWindow(width, height);
 }
-void CoordinateAxesShow()
+void AxesShow()
 {
-    glLineWidth(2);
-    glVertexPointer(3, GL_FLOAT, 0, &axesLine);
+    std::vector<TColor> colors = {{255,0,0}, {0,255,0}, {0,0,255}};
+    std::vector<FPoint> rot = {{0,0,0}, {0,1,0}, {1,0,0}};
+    glVertexPointer(3, GL_FLOAT, 0, &axes);
     glEnableClientState(GL_VERTEX_ARRAY);
-    glColorPointer(3, GL_FLOAT, 0, &axesColor);
-    glEnableClientState(GL_COLOR_ARRAY);
-    glDrawArrays(GL_LINES, 0, 6);
+    for (int i = 0; i < 3; i++) {
+        glPushMatrix();
+        glRotatef(90, rot[i].x, rot[i].y, rot[i].z);
+        glColor3ub(colors[i].r, colors[i].g, colors[i].b);
+        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, axesInd);
+        glPopMatrix();
+    }
     glDisableClientState(GL_VERTEX_ARRAY);
-    glDisableClientState(GL_COLOR_ARRAY);
 }
 
 void SpaceShow()
@@ -210,7 +220,7 @@ void SpaceShow()
     glPushMatrix();
     {
         CameraApply();
-        CoordinateAxesShow();
+        AxesShow();
         PlainShow();
         glEnableClientState(GL_VERTEX_ARRAY);
         glVertexPointer(3, GL_FLOAT, 0, kube);
