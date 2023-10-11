@@ -7,9 +7,6 @@ include(${CMAKE_BINARY_DIR}/conanbuildinfo_multi.cmake)
 
 conan_basic_setup(TARGETS)
 
-
-#find_package(SFML EXACT REQUIRED COMPONENTS system window graphics audio)
-
 set(THREADS_PREFER_PTHREAD_FLAG ON)
 find_package(Threads REQUIRED)
 
@@ -17,6 +14,8 @@ set(CATCH2LIB CONAN_PKG::catch2)
 
 add_executable(cutobject
 	src/main.cpp
+	src/camera.cpp
+	src/camera.h
 )
 
 target_link_libraries(cutobject PRIVATE 

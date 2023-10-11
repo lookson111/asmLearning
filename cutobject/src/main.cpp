@@ -1,9 +1,8 @@
 #define _USE_MATH_DEFINES
 
 #include <iostream>
-#include <SFML/Window.hpp>
-#include <SFML/OpenGL.hpp>
 #include <math.h>
+#include "camera.h"
 
 using namespace std::literals;
 
@@ -36,11 +35,6 @@ struct TColor {
     GLubyte r, g, b;
 };
 
-struct {
-    float x, y, z;
-    float xRot, zRot;
-} camera = { 0,0,1.7, 70,-40 };
-
 struct Object {
     std::vector<float> xyz;
     float x, y, z;
@@ -53,64 +47,6 @@ void ResizeWindow(int w, int h)
     float k = (float)w / (float)h;
     float sz = 0.2;
     glFrustum(-k * sz, k * sz, -sz, sz, sz * 2, 10000);
-}
-
-
-void CameraApply() {
-    glRotatef(-camera.xRot, 1, 0, 0);
-    glRotatef(-camera.zRot, 0, 0, 1);
-    glTranslatef(-camera.x, -camera.y, -camera.z);
-}
-
-void CameraRotation(float xAngle, float zAngle)
-{
-    camera.zRot += zAngle;
-    if (camera.zRot < 0)
-        camera.zRot += 360;
-    if (camera.zRot > 360)
-        camera.zRot -= 360;
-    camera.xRot += xAngle;
-    if (camera.xRot < 0)
-        camera.xRot = 0;
-    if (camera.xRot > 180)
-        camera.xRot = 180;
-}
-
-void CameraMove(sf::Window& window)
-{
-    if (!window.hasFocus())
-        return;
-    static sf::Vector2i base = { width / 2, height / 2 };
-    static constexpr float baseSpeed = 0.1;
-
-    float angle = -camera.zRot / 180 * M_PI;
-    float speed = 0;
-    if (sf::Keyboard::isKeyPressed(sf::Keyboard::W))
-        speed = baseSpeed;
-    if (sf::Keyboard::isKeyPressed(sf::Keyboard::S))
-        speed = -baseSpeed;
-    if (sf::Keyboard::isKeyPressed(sf::Keyboard::A))
-    {
-        speed = baseSpeed;
-        angle -= M_PI * 0.5;
-    }
-    if (sf::Keyboard::isKeyPressed(sf::Keyboard::D))
-    {
-        speed = baseSpeed;
-        angle += M_PI * 0.5;
-    }
-    if (sf::Keyboard::isKeyPressed(sf::Keyboard::Space))
-        camera.z += baseSpeed;
-    if (sf::Keyboard::isKeyPressed(sf::Keyboard::LShift))
-        camera.z -= baseSpeed;
-    if (speed != 0)
-    {
-        camera.x += sin(angle) * speed;
-        camera.y += cos(angle) * speed;
-    }
-    sf::Vector2i cur = sf::Mouse::getPosition(window);
-    CameraRotation((base.y - cur.y) / 15.0, (base.x - cur.x) / 15.0);
-    sf::Mouse::setPosition(base, window);
 }
 
 void ObjectShow()
@@ -191,14 +127,14 @@ void AxesShow()
     glDisableClientState(GL_VERTEX_ARRAY);
 }
 
-void SpaceShow()
+void SpaceShow(Camera& camera)
 {
     glClearColor(0.6, 0.8, 1, 0);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     glPushMatrix();
     {
-        CameraApply();
+        camera.Apply();
         AxesShow();
         PlainShow();
         glEnableClientState(GL_VERTEX_ARRAY);
@@ -215,8 +151,6 @@ void SpaceShow()
     glPopMatrix();
 }
 
-
-
 int main()
 {
     sf::ContextSettings window_settings;
@@ -232,6 +166,7 @@ int main()
 
     // load resources, initialize the OpenGL states, ...
     SpaceInit();
+    Camera camera(window);
     // run the main loop
     bool running = true;
     while (running)
@@ -273,8 +208,8 @@ int main()
         }
 
         // clear the buffers
-        CameraMove(window);
-        SpaceShow();
+        camera.Move();
+        SpaceShow(camera);
 
 
         // end the current frame (internally swaps the front and back buffers)
