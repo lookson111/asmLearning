@@ -1,4 +1,5 @@
 #include "camera.h"
+#include "math.h"
 
 void Camera::Apply()
 {
