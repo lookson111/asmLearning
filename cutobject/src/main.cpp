@@ -127,10 +127,11 @@ void AxesShow()
     }
     glDisableClientState(GL_VERTEX_ARRAY);
 }
-GLdouble rect[7][3] = {5.0, 5.0, 0.0,
+GLdouble rect[][3] = {5.0, 5.0, 0.0,
                        20.0, 5.0, 0.0,
                        20.0, 20.0, 0.0,
                        5.0, 20.0, 0.0,
+                       10.0,50.0, 0.0,
                        7.5, 7.5, 0.0,
                        17.5, 7.5, 0.0,
                        10.0, 17.5, 0.0};
@@ -159,11 +160,12 @@ void GluTest()
             gluTessVertex(tobj, rect[1], rect[1]); 
             gluTessVertex(tobj, rect[2], rect[2]); 
             gluTessVertex(tobj, rect[3], rect[3]);
+            //gluTessVertex(tobj, rect[4], rect[4]);
         gluTessEndContour(tobj); 
         gluTessBeginContour(tobj); 
-            gluTessVertex(tobj, rect[4], rect[4]); 
             gluTessVertex(tobj, rect[5], rect[5]); 
             gluTessVertex(tobj, rect[6], rect[6]); 
+            gluTessVertex(tobj, rect[7], rect[7]); 
         gluTessEndContour(tobj); 
         gluTessEndPolygon(tobj);
         gluDeleteTess(tobj);        
