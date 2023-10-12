@@ -16,6 +16,10 @@ add_executable(cutobject
 	src/main.cpp
 	src/camera.cpp
 	src/camera.h
+	src/load_data.cpp
+	src/load_data.h
+	src/model.cpp
+	src/model.h
 )
 
 target_link_libraries(cutobject PRIVATE 

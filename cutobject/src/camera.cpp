@@ -28,9 +28,9 @@ void Camera::Move()
         return;
     sf::Vector2u current = window_.getSize();
     sf::Vector2i base = { (int)current.x / 2, (int)current.y / 2 };
-    static constexpr float baseSpeed = 0.1;
+    static constexpr float baseSpeed = 0.1f;
 
-    float angle = -zRot_ / 180 * M_PI;
+    float angle = -zRot_ / 180.0f * (float)M_PI;
     float speed = 0;
     if (sf::Keyboard::isKeyPressed(sf::Keyboard::W))
         speed = baseSpeed;
@@ -39,12 +39,12 @@ void Camera::Move()
     if (sf::Keyboard::isKeyPressed(sf::Keyboard::A))
     {
         speed = baseSpeed;
-        angle -= M_PI * 0.5;
+        angle -= (float)M_PI * 0.5f;
     }
     if (sf::Keyboard::isKeyPressed(sf::Keyboard::D))
     {
         speed = baseSpeed;
-        angle += M_PI * 0.5;
+        angle += (float)M_PI * 0.5f;
     }
     if (sf::Keyboard::isKeyPressed(sf::Keyboard::Space))
         posz_ += baseSpeed;
@@ -56,6 +56,6 @@ void Camera::Move()
         posy_ += cos(angle) * speed;
     }
     sf::Vector2i cur = sf::Mouse::getPosition(window_);
-    Rotation((base.y - cur.y) / 15.0, (base.x - cur.x) / 15.0);
+    Rotation((base.y - cur.y) / 15.0f, (base.x - cur.x) / 15.0f);
     sf::Mouse::setPosition(base, window_);
 }

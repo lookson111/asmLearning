@@ -3,12 +3,12 @@
 #include <iostream>
 #include <math.h>
 #include "camera.h"
+#include "model.h"
+
 #include "GL/glu.h"
 
 using namespace std::literals;
 
-static constexpr float dAxes = 100.0f;
-static constexpr float wAxes = 0.01f;
 
 static int width = 1200;
 static int height = 600;
@@ -17,37 +17,17 @@ static int height = 600;
 float kube[] = { 0,0,0, 0,1,0, 1,1,0, 1,0,0, 0,0,1, 0,1,1, 1,1,1, 1,0,1 }; // массив вершин 
 GLuint kubeInd[] = {0,1,2, 2,3,0, 4,5,6, 6,7,4, 3,2,5, 6,7,3, 0,1,5, 5,4,0, // массив граней
                     1,2,6, 6,5,1, 0,3,7, 7,4,0};
-float axes[] = { 
-    0, wAxes,-dAxes, wAxes,-wAxes,-dAxes, -wAxes,-wAxes,-dAxes, 
-    0, wAxes, dAxes, wAxes,-wAxes, dAxes, -wAxes,-wAxes, dAxes};
-GLuint axesInd[] = { 0,3,4, 4,1,0, 1,4,5, 5,2,1, 2,5,3, 3,0,2 }; 
 
 float plainInSegment[] = {-1, -1, -1, 1};
 
-struct TPoint {
-    int x, y;
-};
-
-struct FPoint {
-    float x, y, z;
-};
-
-struct TColor {
-    GLubyte r, g, b;
-};
-
-struct Object {
-    std::vector<float> xyz;
-    float x, y, z;
-};
 
 void ResizeWindow(int w, int h)
 {
     glViewport(0, 0, w, h);
     glLoadIdentity();
     float k = (float)w / (float)h;
-    float sz = 0.2;
-    glFrustum(-k * sz, k * sz, -sz, sz, sz * 2, 10000);
+    float sz = 0.2f;
+    glFrustum(-k * sz, k * sz, -sz, sz, sz * 2, 10000.0f);
 }
 
 void ObjectShow()
@@ -65,77 +45,24 @@ void ObjectShow()
 }
 
 
-void PlainShow()
-{
-    auto p = plainInSegment;
-    std::vector<float> plain;
-    //1
-    plain.push_back(0.0f);
-    plain.push_back(dAxes);
-    plain.push_back((-p[3]-p[1]*dAxes)/p[2]);
-    //6
-    plain.push_back(-dAxes);
-    plain.push_back((-p[3]+ p[0] * dAxes) / p[1]);
-    plain.push_back(0.0f);
-    //2
-    plain.push_back((-p[3] - p[2] * dAxes) / p[0]);
-    plain.push_back(0.0f);
-    plain.push_back(dAxes);
-    //4
-    plain.push_back(0.0f);
-    plain.push_back(-dAxes);
-    plain.push_back((-p[3] + p[1] * dAxes) / p[2]);
-    //3
-    plain.push_back(dAxes);
-    plain.push_back((-p[3] - p[0] * dAxes) / p[1]);
-    plain.push_back(0.0f);
-    //5
-    plain.push_back((-p[3] + p[2] * dAxes) / p[0]);
-    plain.push_back(0.0f);
-    plain.push_back(-dAxes);
-
-    glEnable(GL_BLEND);
-    {
-        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-        glColor3ub(54, 100, 234);
-        glVertexPointer(3, GL_FLOAT, 0, plain.data());
-        glEnableClientState(GL_VERTEX_ARRAY);
-        glDrawArrays(GL_TRIANGLE_FAN, 0, plain.size()/3);
-        glDisableClientState(GL_VERTEX_ARRAY);
-    }
-    glDisable(GL_BLEND);
-}
-
 void SpaceInit()
 {
     glEnable(GL_DEPTH_TEST);
     ResizeWindow(width, height);
 }
-void AxesShow()
-{
-    std::vector<TColor> colors = {{255,222,0}, {0,255,0}, {0,0,255}};
-    std::vector<FPoint> rot = {{0,0,0}, {0,1,0}, {1,0,0}};
-    glVertexPointer(3, GL_FLOAT, 0, &axes);
-    glEnableClientState(GL_VERTEX_ARRAY);
-    for (int i = 0; i < 3; i++) {
-        glPushMatrix();
-        if (i) // fix in windows
-            glRotatef(90, rot[i].x, rot[i].y, rot[i].z);
-        glColor3ub(colors[i].r, colors[i].g, colors[i].b);
-        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, axesInd);
-        glPopMatrix();
-    }
-    glDisableClientState(GL_VERTEX_ARRAY);
-}
 GLdouble rect[][3] = {5.0, 5.0, 0.0,
                        20.0, 5.0, 0.0,
                        20.0, 20.0, 0.0,
                        5.0, 20.0, 0.0,
-                       10.0,50.0, 0.0,
+                       6.0,10.0, 0.0,
                        7.5, 7.5, 0.0,
                        17.5, 7.5, 0.0,
                        10.0, 17.5, 0.0};
-GLdouble quad1[4][3] = { {-10,30,0}, {0,0,0}, {10,30,0}, {0,20,0} };
+GLdouble quad1[][3] = { 
+    -20,30,0, 
+    -10,0,0, 
+    0,30,0, 
+    -10,20,0 };
 void tessErrorCB(GLenum errorCode)
 {
     const GLubyte *errorStr;
@@ -148,16 +75,7 @@ void GluTest()
     //GLuint id = glGenLists(1);  // create a display list
 
     glPushMatrix();
-    {
-	GLUquadricObj *quadObj = gluNewQuadric();
-    	gluQuadricDrawStyle(quadObj, GLU_FILL);
-        gluSphere(quadObj, 0.5, 10, 10);
-        
-        glTranslated(-2,0,0);
-        gluQuadricDrawStyle(quadObj, GLU_LINE);
-        gluCylinder(quadObj, 0.5, 0.75, 1, 15, 15);
-        gluDeleteQuadric(quadObj);
-    	
+    {            	
         GLUtesselator *tobj = gluNewTess();
         gluTessCallback(tobj, GLU_TESS_VERTEX, (GLvoid (*) ( )) &glVertex3dv);
         gluTessCallback(tobj, GLU_TESS_BEGIN,  (GLvoid (*) ( )) &glBegin);
@@ -170,7 +88,7 @@ void GluTest()
             gluTessVertex(tobj, rect[1], rect[1]); 
             gluTessVertex(tobj, rect[2], rect[2]); 
             gluTessVertex(tobj, rect[3], rect[3]);
-            //gluTessVertex(tobj, rect[4], rect[4]);
+            gluTessVertex(tobj, rect[4], rect[4]);
         gluTessEndContour(tobj); 
         gluTessBeginContour(tobj); 
             gluTessVertex(tobj, rect[5], rect[5]); 
@@ -198,14 +116,13 @@ void GluTest()
 
 void SpaceShow(Camera& camera)
 {
-    glClearColor(0.6, 0.8, 1, 0);
+    glClearColor(0.6f, 0.8f, 1.0f, 0.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     
     glPushMatrix();
     {
         camera.Apply();
-        AxesShow();
-        //PlainShow();
+        model::Axes::Show();
         GluTest();
         glColor3ui(23, 142, 232);
         glEnableClientState(GL_VERTEX_ARRAY);
