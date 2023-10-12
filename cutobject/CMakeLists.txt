@@ -20,6 +20,7 @@ add_executable(cutobject
 
 target_link_libraries(cutobject PRIVATE 
 	CONAN_PKG::sfml
+	CONAN_PKG::glu
 )
 
 add_executable(cutobject_tests

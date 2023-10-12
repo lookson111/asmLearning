@@ -3,6 +3,7 @@
 #include <iostream>
 #include <math.h>
 #include "camera.h"
+#include "GL/glu.h"
 
 using namespace std::literals;
 
@@ -126,17 +127,62 @@ void AxesShow()
     }
     glDisableClientState(GL_VERTEX_ARRAY);
 }
+GLdouble rect[7][3] = {5.0, 5.0, 0.0,
+                       20.0, 5.0, 0.0,
+                       20.0, 20.0, 0.0,
+                       5.0, 20.0, 0.0,
+                       7.5, 7.5, 0.0,
+                       17.5, 7.5, 0.0,
+                       10.0, 17.5, 0.0};
+
+void GluTest() 
+{
+    glPushMatrix();
+    {
+	GLUquadricObj *quadObj = gluNewQuadric();
+    	gluQuadricDrawStyle(quadObj, GLU_FILL);
+        gluSphere(quadObj, 0.5, 10, 10);
+        
+        glTranslated(-2,0,0);
+        gluQuadricDrawStyle(quadObj, GLU_LINE);
+        gluCylinder(quadObj, 0.5, 0.75, 1, 15, 15);
+        gluDeleteQuadric(quadObj);
+    	
+        GLUtesselator *tobj = gluNewTess();
+        gluTessCallback(tobj, GLU_TESS_VERTEX, (GLvoid (*) ( )) &glVertex3dv);
+        gluTessCallback(tobj, GLU_TESS_BEGIN,  (GLvoid (*) ( )) &glBegin);
+        gluTessCallback(tobj, GLU_TESS_END,    glEnd);
+        
+        gluTessBeginPolygon(tobj, NULL); 
+        gluTessBeginContour(tobj); 
+            gluTessVertex(tobj, rect[0], rect[0]); 
+            gluTessVertex(tobj, rect[1], rect[1]); 
+            gluTessVertex(tobj, rect[2], rect[2]); 
+            gluTessVertex(tobj, rect[3], rect[3]);
+        gluTessEndContour(tobj); 
+        gluTessBeginContour(tobj); 
+            gluTessVertex(tobj, rect[4], rect[4]); 
+            gluTessVertex(tobj, rect[5], rect[5]); 
+            gluTessVertex(tobj, rect[6], rect[6]); 
+        gluTessEndContour(tobj); 
+        gluTessEndPolygon(tobj);
+        gluDeleteTess(tobj);        
+    }
+    glPopMatrix();
+}
 
 void SpaceShow(Camera& camera)
 {
     glClearColor(0.6, 0.8, 1, 0);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
+    
     glPushMatrix();
     {
         camera.Apply();
         AxesShow();
-        PlainShow();
+        //PlainShow();
+        GluTest();
+        glColor3ui(23, 142, 232);
         glEnableClientState(GL_VERTEX_ARRAY);
         glVertexPointer(3, GL_FLOAT, 0, kube);
         glPushMatrix();

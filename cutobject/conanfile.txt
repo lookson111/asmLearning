@@ -1,5 +1,6 @@
 [requires]
 sfml/2.6.0
+glu/system
 catch2/3.1.0
 
 [generators]
