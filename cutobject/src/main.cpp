@@ -4,7 +4,8 @@
 #include <math.h>
 #include "camera.h"
 #include "model.h"
-
+#include "view.h"
+#include "load_data.h"
 #include "GL/glu.h"
 
 using namespace std::literals;
@@ -18,8 +19,6 @@ float kube[] = { 0,0,0, 0,1,0, 1,1,0, 1,0,0, 0,0,1, 0,1,1, 1,1,1, 1,0,1 }; // ма
 GLuint kubeInd[] = {0,1,2, 2,3,0, 4,5,6, 6,7,4, 3,2,5, 6,7,3, 0,1,5, 5,4,0, // массив граней
                     1,2,6, 6,5,1, 0,3,7, 7,4,0};
 
-float plainInSegment[] = {-1, -1, -1, 1};
-
 
 void ResizeWindow(int w, int h)
 {
@@ -32,6 +31,16 @@ void ResizeWindow(int w, int h)
 
 void ObjectShow()
 {
+    glColor3ui(23, 142, 232);
+    glEnableClientState(GL_VERTEX_ARRAY);
+    glVertexPointer(3, GL_FLOAT, 0, kube);
+    glPushMatrix();
+    {
+        glColor3ui(234, 142, 13);
+        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, kubeInd);
+    }
+    glPopMatrix();
+    glDisableClientState(GL_VERTEX_ARRAY);
     glEnableClientState(GL_VERTEX_ARRAY);
     glVertexPointer(3, GL_FLOAT, 0, kube);
     for (int i = 0; i < 1/*objectcnt*/; i++)
@@ -73,7 +82,6 @@ void tessErrorCB(GLenum errorCode)
 void GluTest() 
 {
     //GLuint id = glGenLists(1);  // create a display list
-
     glPushMatrix();
     {            	
         GLUtesselator *tobj = gluNewTess();
@@ -114,31 +122,6 @@ void GluTest()
     glPopMatrix();
 }
 
-void SpaceShow(Camera& camera)
-{
-    glClearColor(0.6f, 0.8f, 1.0f, 0.0f);
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    
-    glPushMatrix();
-    {
-        camera.Apply();
-        model::Axes::Show();
-        GluTest();
-        glColor3ui(23, 142, 232);
-        glEnableClientState(GL_VERTEX_ARRAY);
-        glVertexPointer(3, GL_FLOAT, 0, kube);
-        glPushMatrix();
-        {
-            glColor3ui(234, 142, 13);
-            glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, kubeInd);
-        }
-        glPopMatrix();
-        glDisableClientState(GL_VERTEX_ARRAY);
-        ObjectShow();
-    }
-    glPopMatrix();
-}
-
 int main()
 {
     sf::ContextSettings window_settings;
@@ -155,6 +138,11 @@ int main()
     // load resources, initialize the OpenGL states, ...
     SpaceInit();
     Camera camera(window);
+    auto [plain, polygon] = load::LoadData("");
+    model::Axes axes;
+    view::ObjectsView viewer(axes, polygon, plain);
+
+
     // run the main loop
     bool running = true;
     while (running)
@@ -177,6 +165,8 @@ int main()
             case sf::Event::KeyPressed:
                 if (event.key.code == sf::Keyboard::Escape)
                     running = false;
+                if (event.key.code == sf::Keyboard::E)
+                    viewer.PlainOnOff();
                 break;
             case sf::Event::MouseWheelScrolled:
                 break;
@@ -196,9 +186,18 @@ int main()
         }
 
         // clear the buffers
-        camera.Move();
-        SpaceShow(camera);
+        glClearColor(0.6f, 0.8f, 1.0f, 0.0f);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+        camera.Move();
+        glPushMatrix();
+        {
+            camera.Apply();
+            viewer.ShowAll();
+            GluTest();
+            ObjectShow();
+        }
+        glPopMatrix();
 
         // end the current frame (internally swaps the front and back buffers)
         window.display();

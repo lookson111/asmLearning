@@ -4,10 +4,10 @@
 static constexpr float dAxes = 100.0f;
 static constexpr float wAxes = 0.01f;
 
-float axes[] = {
+static float axes[] = {
     0, wAxes,-dAxes, wAxes,-wAxes,-dAxes, -wAxes,-wAxes,-dAxes,
     0, wAxes, dAxes, wAxes,-wAxes, dAxes, -wAxes,-wAxes, dAxes };
-GLuint axesInd[] = { 0,3,4, 4,1,0, 1,4,5, 5,2,1, 2,5,3, 3,0,2 };
+static unsigned int axesInd[] = { 0,3,4, 4,1,0, 1,4,5, 5,2,1, 2,5,3, 3,0,2 };
 
 namespace model {
 
@@ -65,63 +65,39 @@ void Edges::End()
 Plain::Plain(float A, float B, float C, float D)
 	: A_(A), B_(B), C_(C), D_(D)
 {
-}
-
-void Plain::Show()
-{
-    std::vector<float> plain;
     //1
-    plain.push_back(0.0f);
-    plain.push_back(dAxes);
-    plain.push_back((-D_ - B_ * dAxes) / C_);
+    plain_.push_back(0.0f);
+    plain_.push_back(dAxes);
+    plain_.push_back((-D_ - B_ * dAxes) / C_);
     //6
-    plain.push_back(-dAxes);
-    plain.push_back((-D_ + A_ * dAxes) / B_);
-    plain.push_back(0.0f);
+    plain_.push_back(-dAxes);
+    plain_.push_back((-D_ + A_ * dAxes) / B_);
+    plain_.push_back(0.0f);
     //2
-    plain.push_back((-D_ - C_ * dAxes) / A_);
-    plain.push_back(0.0f);
-    plain.push_back(dAxes);
+    plain_.push_back((-D_ - C_ * dAxes) / A_);
+    plain_.push_back(0.0f);
+    plain_.push_back(dAxes);
     //4
-    plain.push_back(0.0f);
-    plain.push_back(-dAxes);
-    plain.push_back((-D_ + B_ * dAxes) / C_);
+    plain_.push_back(0.0f);
+    plain_.push_back(-dAxes);
+    plain_.push_back((-D_ + B_ * dAxes) / C_);
     //3
-    plain.push_back(dAxes);
-    plain.push_back((-D_ - A_ * dAxes) / B_);
-    plain.push_back(0.0f);
+    plain_.push_back(dAxes);
+    plain_.push_back((-D_ - A_ * dAxes) / B_);
+    plain_.push_back(0.0f);
     //5
-    plain.push_back((-D_ + C_ * dAxes) / A_);
-    plain.push_back(0.0f);
-    plain.push_back(-dAxes);
-
-    glEnable(GL_BLEND);
-    {
-        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-        glColor3ub(54, 100, 234);
-        glVertexPointer(3, GL_FLOAT, 0, plain.data());
-        glEnableClientState(GL_VERTEX_ARRAY);
-        glDrawArrays(GL_TRIANGLE_FAN, 0, (GLsizei)plain.size() / 3);
-        glDisableClientState(GL_VERTEX_ARRAY);
-    }
-    glDisable(GL_BLEND);
+    plain_.push_back((-D_ + C_ * dAxes) / A_);
+    plain_.push_back(0.0f);
+    plain_.push_back(-dAxes);
 }
 
-void Axes::Show()
+Axes::Axes()
 {
-    std::vector<TColor> colors = { {255,222,0}, {0,255,0}, {0,0,255} };
-    std::vector<FPoint> rot = { {0,0,0}, {0,1,0}, {1,0,0} };
-    glVertexPointer(3, GL_FLOAT, 0, &axes);
-    glEnableClientState(GL_VERTEX_ARRAY);
-    for (int i = 0; i < 3; i++) {
-        glPushMatrix();
-        if (i) // fix in windows
-            glRotatef(90, rot[i].x, rot[i].y, rot[i].z);
-        glColor3ub(colors[i].r, colors[i].g, colors[i].b);
-        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, axesInd);
-        glPopMatrix();
-    }
-    glDisableClientState(GL_VERTEX_ARRAY);
+    colors_ = { {255,222,0}, {0,255,0}, {0,0,255} };
+    rot_ = { {0,0,0}, {0,1,0}, {1,0,0} };
+    vertex_ = axes;
+    edges_ind_ = axesInd;
 }
+
 
 } // namespace load

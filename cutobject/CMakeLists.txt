@@ -20,6 +20,8 @@ add_executable(cutobject
 	src/load_data.h
 	src/model.cpp
 	src/model.h
+	src/view.cpp
+	src/view.h
 )
 
 target_link_libraries(cutobject PRIVATE 

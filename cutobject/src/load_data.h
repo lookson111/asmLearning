@@ -1,9 +1,9 @@
 #pragma once
 
 #include <filesystem>
-
+#include "model.h"
 namespace load {
 
-//model::Objets LoadData(const std::filesystem::path& json_path);
+std::pair<model::Plain, model::PolygonMash> LoadData(const std::filesystem::path& path);
 
 } // namespace load
