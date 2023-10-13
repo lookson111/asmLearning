@@ -59,17 +59,20 @@ https://russianblogs.com/article/4896740001/
 
 
 
-## Install 
-# Ubuntu
+# Install 
+## Ubuntu
 ```
 sudo apt update
 sudo apt upgrade
+sudo apt install python3 python3-pip cmake
+sudo pip install conan==1.*
 sudo apt install libudev-dev libudev-dev libudev-dev libgl-dev libgl1-mesa-dev libx11-xcb-dev libfontenc-dev libice-dev libsm-dev libxaw7-dev libxcomposite-dev libxcursor-dev libxdamage-dev libxext-dev libxfixes-dev libxi-dev libxinerama-dev libxkbfile-dev libxmu-dev libxmuu-dev libxpm-dev libxrandr-dev libxrender-dev libxres-dev libxss-dev libxt-dev libxtst-dev libxv-dev libxvmc-dev libxxf86vm-dev libxcb-render0-dev libxcb-render-util0-dev libxcb-xkb-dev libxcb-icccm4-dev libxcb-image0-dev libxcb-keysyms1-dev libxcb-randr0-dev libxcb-shape0-dev libxcb-sync-dev libxcb-xfixes0-dev libxcb-xinerama0-dev libxcb-dri3-dev uuid-dev libxcb-cursor-dev libxcb-util0-dev libxcb-util-dev libglu1-mesa-dev
 conan install .. --build=missing -s build_type=Debug -s compiler.libcxx=libstdc++11
 cmake .. -DCMAKE_BUILD_TYPE=Debug
 cmake --build .
 ```
-# Windows
+## Windows
+Install python with pip. Install MSVC, cmake.
 ```
 conan install .. --build=missing -s build_type=Debug
 cmake .. -DCMAKE_BUILD_TYPE=Debug
