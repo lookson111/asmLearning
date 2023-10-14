@@ -22,6 +22,8 @@ add_executable(cutobject
 	src/model.h
 	src/view.cpp
 	src/view.h
+	src/static_data.cpp
+	src/static_data.h
 )
 
 target_link_libraries(cutobject PRIVATE 

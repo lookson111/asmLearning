@@ -17,6 +17,8 @@ class ObjectsView {
 	void AxesShow();
 	void PolygonMashShow();
 	void PlainShow();
+	void ObjectShow();
+	void GluTest();
 
 public:
 	ObjectsView(const Axes& axes, const PolygonMash& polygon_mash, 

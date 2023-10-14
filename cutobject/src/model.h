@@ -59,8 +59,8 @@ public:
 class Axes {
 	std::vector<TColor> colors_;
 	std::vector<FPoint> rot_;
-	float* vertex_;
-	unsigned int* edges_ind_;
+	const float* vertex_;
+	const unsigned int* edges_ind_;
 
 public:
 	Axes();

@@ -1,13 +1,5 @@
 #include "model.h"
-
-
-static constexpr float dAxes = 100.0f;
-static constexpr float wAxes = 0.01f;
-
-static float axes[] = {
-    0, wAxes,-dAxes, wAxes,-wAxes,-dAxes, -wAxes,-wAxes,-dAxes,
-    0, wAxes, dAxes, wAxes,-wAxes, dAxes, -wAxes,-wAxes, dAxes };
-static unsigned int axesInd[] = { 0,3,4, 4,1,0, 1,4,5, 5,2,1, 2,5,3, 3,0,2 };
+#include "static_data.h"
 
 namespace model {
 
@@ -65,6 +57,7 @@ void Edges::End()
 Plain::Plain(float A, float B, float C, float D)
 	: A_(A), B_(B), C_(C), D_(D)
 {
+    auto& dAxes = static_data::Data::dAxes;
     //1
     plain_.push_back(0.0f);
     plain_.push_back(dAxes);
@@ -95,8 +88,8 @@ Axes::Axes()
 {
     colors_ = { {255,222,0}, {0,255,0}, {0,0,255} };
     rot_ = { {0,0,0}, {0,1,0}, {1,0,0} };
-    vertex_ = axes;
-    edges_ind_ = axesInd;
+    vertex_ = static_data::Data::axes.data();
+    edges_ind_ = static_data::Data::axesInd.data();
 }
 
 
