@@ -4,6 +4,7 @@
 #include "model.h"
 namespace load {
 
-std::pair<model::Plain, model::PolygonMash> LoadData(const std::filesystem::path& path);
+std::optional<std::pair<model::Plain, model::PolygonMash>>
+LoadData(const std::filesystem::path& path);
 
 } // namespace load

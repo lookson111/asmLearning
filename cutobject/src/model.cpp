@@ -54,8 +54,7 @@ void Edges::End()
 }
 
 
-Plain::Plain(float A, float B, float C, float D)
-	: A_(A), B_(B), C_(C), D_(D)
+void Plain::Init()
 {
     auto& dAxes = static_data::Data::dAxes;
     //1
@@ -82,6 +81,25 @@ Plain::Plain(float A, float B, float C, float D)
     plain_.push_back((-D_ + C_ * dAxes) / A_);
     plain_.push_back(0.0f);
     plain_.push_back(-dAxes);
+}
+
+Plain::Plain(float A, float B, float C, float D)
+	: A_(A), B_(B), C_(C), D_(D)
+{
+    Init();
+}
+
+Plain::Plain()
+    : A_(0.0f), B_(0.0f), C_(0.0f), D_(0.0f)
+{}
+
+void Plain::Set(float A, float B, float C, float D)
+{
+    A_= A; 
+    B_ = B;
+    C_ = C; 
+    D_ = D;
+    Init();
 }
 
 Axes::Axes()

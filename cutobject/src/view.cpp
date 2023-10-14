@@ -80,45 +80,37 @@ void ObjectsView::GluTest()
 {
     auto rect = static_data::Data::rect.data();
     auto quad1 = static_data::Data::quad1.data();
-    //GLuint id = glGenLists(1);  // create a display list
-    glPushMatrix();
-    {
-        GLUtesselator* tobj = gluNewTess();
-        gluTessCallback(tobj, GLU_TESS_VERTEX, (GLvoid(*) ()) & glVertex3dv);
-        gluTessCallback(tobj, GLU_TESS_BEGIN, (GLvoid(*) ()) & glBegin);
-        gluTessCallback(tobj, GLU_TESS_ERROR, (GLvoid(*)())tessErrorCB);
-        gluTessCallback(tobj, GLU_TESS_END, glEnd);
+    GLUtesselator* tobj = gluNewTess();
+    gluTessCallback(tobj, GLU_TESS_VERTEX, (GLvoid(*) ()) & glVertex3dv);
+    gluTessCallback(tobj, GLU_TESS_BEGIN, (GLvoid(*) ()) & glBegin);
+    gluTessCallback(tobj, GLU_TESS_ERROR, (GLvoid(*)())tessErrorCB);
+    gluTessCallback(tobj, GLU_TESS_END, glEnd);
 
-        gluTessBeginPolygon(tobj, NULL);
-        gluTessBeginContour(tobj);
-        gluTessVertex(tobj, rect[0], rect[0]);
-        gluTessVertex(tobj, rect[1], rect[1]);
-        gluTessVertex(tobj, rect[2], rect[2]);
-        gluTessVertex(tobj, rect[3], rect[3]);
-        gluTessVertex(tobj, rect[4], rect[4]);
-        gluTessEndContour(tobj);
-        gluTessBeginContour(tobj);
-        gluTessVertex(tobj, rect[5], rect[5]);
-        gluTessVertex(tobj, rect[6], rect[6]);
-        gluTessVertex(tobj, rect[7], rect[7]);
-        gluTessEndContour(tobj);
-        gluTessEndPolygon(tobj);
-        //glNewList(id, GL_COMPILE);
-        glColor3f(1, 1, 1);
-        gluTessBeginPolygon(tobj, NULL);                   // with NULL data
-        gluTessBeginContour(tobj);
-        gluTessVertex(tobj, quad1[0], quad1[0]);
-        gluTessVertex(tobj, quad1[1], quad1[1]);
-        gluTessVertex(tobj, quad1[2], quad1[2]);
-        gluTessVertex(tobj, quad1[3], quad1[3]);
-        gluTessEndContour(tobj);
-        gluTessEndPolygon(tobj);
-        //glEndList();
+    gluTessBeginPolygon(tobj, NULL);
+    gluTessBeginContour(tobj);
+    gluTessVertex(tobj, rect[0], rect[0]);
+    gluTessVertex(tobj, rect[1], rect[1]);
+    gluTessVertex(tobj, rect[2], rect[2]);
+    gluTessVertex(tobj, rect[3], rect[3]);
+    gluTessVertex(tobj, rect[4], rect[4]);
+    gluTessEndContour(tobj);
+    gluTessBeginContour(tobj);
+    gluTessVertex(tobj, rect[5], rect[5]);
+    gluTessVertex(tobj, rect[6], rect[6]);
+    gluTessVertex(tobj, rect[7], rect[7]);
+    gluTessEndContour(tobj);
+    gluTessEndPolygon(tobj);
+    glColor3f(1, 1, 1);
+    gluTessBeginPolygon(tobj, NULL);                   // with NULL data
+    gluTessBeginContour(tobj);
+    gluTessVertex(tobj, quad1[0], quad1[0]);
+    gluTessVertex(tobj, quad1[1], quad1[1]);
+    gluTessVertex(tobj, quad1[2], quad1[2]);
+    gluTessVertex(tobj, quad1[3], quad1[3]);
+    gluTessEndContour(tobj);
+    gluTessEndPolygon(tobj);
 
-        gluDeleteTess(tobj);
-
-    }
-    glPopMatrix();
+    gluDeleteTess(tobj);
 }
 
 

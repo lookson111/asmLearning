@@ -23,14 +23,20 @@ void ResizeWindow(int w, int h)
     glFrustum(-k * sz, k * sz, -sz, sz, sz * 2, 10000.0f);
 }
 
-
 void SpaceInit()
 {
     glEnable(GL_DEPTH_TEST);
     ResizeWindow(width, height);
 }
+
 int main(int argc, char* argv[])
 {
+    if (argc < 2) {
+        std::cout << "Need write path to data file." << std::endl;
+        return 0;
+    }
+    std::string path = argv[1];
+
     sf::ContextSettings window_settings;
     window_settings.depthBits = 24; // Request a 24-bit depth buffer
     window_settings.stencilBits = 8;  // Request a 8 bits stencil buffer
@@ -44,10 +50,17 @@ int main(int argc, char* argv[])
 
     // load resources, initialize the OpenGL states, ...
     SpaceInit();
-    Camera camera(window);
-    auto [plain, polygon] = load::LoadData("");
     model::Axes axes;
-    view::ObjectsView viewer(axes, polygon, plain);
+    Camera camera(window);
+    std::unique_ptr<view::ObjectsView> viewer;
+    auto data = load::LoadData(path);
+    if (data == std::nullopt) {
+        std::cout << "File not found." << std::endl;
+        return 0;
+    }
+    else {
+        viewer = std::make_unique<view::ObjectsView>(axes, data.value().second, data.value().first);
+    }
 
 
     // run the main loop
@@ -73,7 +86,7 @@ int main(int argc, char* argv[])
                 if (event.key.code == sf::Keyboard::Escape)
                     running = false;
                 if (event.key.code == sf::Keyboard::E)
-                    viewer.PlainOnOff();
+                    viewer->PlainOnOff();
                 break;
             case sf::Event::MouseWheelScrolled:
                 break;
@@ -100,7 +113,7 @@ int main(int argc, char* argv[])
         glPushMatrix();
         {
             camera.Apply();
-            viewer.ShowAll();
+            viewer->ShowAll();
         }
         glPopMatrix();
 

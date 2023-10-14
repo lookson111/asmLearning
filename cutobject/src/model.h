@@ -24,7 +24,13 @@ public:
 	void Push(float x, float y, float z);
 	const std::vector<float>& Get();
 };
-using Edge = std::vector<int>;
+
+using Contour = std::vector<unsigned int>;
+
+struct Edge {
+	Contour outer; // outer contour
+	std::vector<Contour> holes;
+};
 
 class Edges {
 private:
@@ -47,9 +53,12 @@ public:
 class Plain {
 	float A_, B_, C_, D_;
 	std::vector<float> plain_;
+	void Init();
 
 public:
 	Plain(float A, float B, float C, float D);
+	Plain();
+	void Set(float A, float B, float C, float D);
 	const auto& GetVertex() const {
 		return plain_;
 	}
@@ -79,13 +88,13 @@ public:
 };
 
 struct PolygonMash {
-	Vertex vertex_;
-	Edges edges_;
+	Vertex vertex;
+	Edges edges;
 };
 
 struct Objects {
-	Plain plain_;
-	PolygonMash polygon_mash_;
+	Plain plain;
+	PolygonMash polygon_mash;
 };
 
 } // namespace model
