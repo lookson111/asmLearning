@@ -22,6 +22,7 @@ std::array<double[3], 8> Data::rect = {
     7.5, 7.5, 0.0,
     17.5, 7.5, 0.0,
     10.0, 17.5, 0.0 };
+
 std::array<double[3], 4> Data::quad1 = {
     -20,30,0,
     -10,0,0,

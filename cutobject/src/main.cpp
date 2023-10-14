@@ -49,6 +49,7 @@ int main(int argc, char* argv[])
     window.setActive(true);
 
     // load resources, initialize the OpenGL states, ...
+    window.setFramerateLimit(60);
     SpaceInit();
     model::Axes axes;
     Camera camera(window);

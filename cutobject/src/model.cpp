@@ -3,14 +3,19 @@
 
 namespace model {
 
-void Vertex::Push(float x, float y, float z)
+void Vertex::Push(double x, double y, double z)
 {
 	pointXYZ_.insert(pointXYZ_.end(), {x, y, z});
 }
 
-const std::vector<float>& Vertex::Get()
+const Vertex::VertexType& Vertex::Get() const
 {
 	return pointXYZ_;
+}
+
+Vertex::VertexType& Vertex::Get()
+{
+    return pointXYZ_;
 }
 
 void Edges::Push(Edge&& edge)
@@ -21,15 +26,21 @@ void Edges::Push(Edge&& edge)
 		edges_.insert({ counter_++, std::move(edge) });
 }
 
-void Edges::Begin()
+const Edge* Edges::Begin()
 {
 	started_ = true;
 	it_edges_ = edges_.begin();
+    if (it_edges_ == edges_.end())
+        return nullptr;
+    return &it_edges_->second;
 }
 
-const Edge& Edges::Next()
+const Edge* Edges::Next()
 {
-	return (it_edges_++)->second;
+    it_edges_++;
+    if (it_edges_ == edges_.end())
+        return nullptr;
+	return &it_edges_->second;
 }
 
 void Edges::DeleteCurrent()

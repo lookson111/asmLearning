@@ -1,11 +1,41 @@
 #include "view.h"
 
 #include <iostream>
-#include "GL/glu.h"
 
 #include "static_data.h"
 
 namespace view {
+
+
+static void tessErrorCB(GLenum errorCode)
+{
+    const GLubyte* errorStr;
+
+    errorStr = gluErrorString(errorCode);
+    std::cout << "[ERROR]: " << errorStr << std::endl;
+}
+
+ObjectsView::ObjectsView(const Axes& axes, 
+    PolygonMash& polygon_mash, const Plain& plain)
+    : axes_(axes)
+    , polygon_mash_(polygon_mash)
+    , plain_(plain)
+{
+    tobj = gluNewTess();
+    TessInit();
+}
+ObjectsView::~ObjectsView()
+{
+    gluDeleteTess(tobj);
+}
+
+void ObjectsView::TessInit() {
+    gluTessCallback(tobj, GLU_TESS_VERTEX, (GLvoid(*) ()) & glVertex3dv);
+    gluTessCallback(tobj, GLU_TESS_BEGIN, (GLvoid(*) ()) & glBegin);
+    gluTessCallback(tobj, GLU_TESS_ERROR, (GLvoid(*)())tessErrorCB);
+    gluTessCallback(tobj, GLU_TESS_END, glEnd);
+}
+
 void ObjectsView::AxesShow()
 {
     glVertexPointer(3, GL_FLOAT, 0, axes_.GetVertex());
@@ -24,6 +54,31 @@ void ObjectsView::AxesShow()
 }
 void ObjectsView::PolygonMashShow()
 {
+    static constexpr int sz_point = 3;
+    auto vertex = polygon_mash_.vertex.Get().data();
+
+    glColor3f(50, 50, 1);
+    for (auto& [i, edge] : polygon_mash_.edges.GeEdges()) {
+        gluTessBeginPolygon(tobj, NULL);
+        gluTessBeginContour(tobj);
+        for (auto& outer : edge.outer) {
+            auto point = &vertex[outer * sz_point];
+            auto i1 = *point;
+            auto i2 = *(point +1);
+            auto i3 = *(point +2);
+            gluTessVertex(tobj, point, point);
+        }
+        gluTessEndContour(tobj);
+        for (auto& holes : edge.holes) {
+            gluTessBeginContour(tobj);
+            for (auto& holeVertex : holes) {
+                auto point = &vertex[holeVertex * sz_point];
+                gluTessVertex(tobj, point, point);
+            }
+            gluTessEndContour(tobj);
+        }
+        gluTessEndPolygon(tobj);
+    }
 }
 void ObjectsView::PlainShow()
 {
@@ -45,14 +100,14 @@ void ObjectsView::ShowAll()
         PlainShow();
     PolygonMashShow();
     AxesShow();
-    GluTest();
+    //GluTest();
     ObjectShow();
 }
+
 void ObjectsView::PlainOnOff()
 {
     plain_on_ = !plain_on_;
 }
-
 
 void ObjectsView::ObjectShow()
 {
@@ -68,24 +123,10 @@ void ObjectsView::ObjectShow()
     glDisableClientState(GL_VERTEX_ARRAY);
 }
 
-static void tessErrorCB(GLenum errorCode)
-{
-    const GLubyte* errorStr;
-
-    errorStr = gluErrorString(errorCode);
-    std::cout << "[ERROR]: " << errorStr << std::endl;
-}
-
 void ObjectsView::GluTest()
 {
     auto rect = static_data::Data::rect.data();
     auto quad1 = static_data::Data::quad1.data();
-    GLUtesselator* tobj = gluNewTess();
-    gluTessCallback(tobj, GLU_TESS_VERTEX, (GLvoid(*) ()) & glVertex3dv);
-    gluTessCallback(tobj, GLU_TESS_BEGIN, (GLvoid(*) ()) & glBegin);
-    gluTessCallback(tobj, GLU_TESS_ERROR, (GLvoid(*)())tessErrorCB);
-    gluTessCallback(tobj, GLU_TESS_END, glEnd);
-
     gluTessBeginPolygon(tobj, NULL);
     gluTessBeginContour(tobj);
     gluTessVertex(tobj, rect[0], rect[0]);
@@ -110,7 +151,6 @@ void ObjectsView::GluTest()
     gluTessEndContour(tobj);
     gluTessEndPolygon(tobj);
 
-    gluDeleteTess(tobj);
 }
 
 

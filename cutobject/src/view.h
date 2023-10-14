@@ -3,17 +3,21 @@
 #define _USE_MATH_DEFINES
 #include <SFML/Window.hpp>
 #include <SFML/OpenGL.hpp>
+#include "GL/glu.h"
 #include "model.h"
 
 namespace view {
 using namespace model;
+
 class ObjectsView {
-	bool plain_on_ = true;
+	bool plain_on_ = false;
 
 	const Axes& axes_;
-	const PolygonMash& polygon_mash_;
+	PolygonMash& polygon_mash_;
 	const Plain& plain_;
+	GLUtesselator* tobj;
 
+	void TessInit();
 	void AxesShow();
 	void PolygonMashShow();
 	void PlainShow();
@@ -21,12 +25,9 @@ class ObjectsView {
 	void GluTest();
 
 public:
-	ObjectsView(const Axes& axes, const PolygonMash& polygon_mash, 
-		const Plain& plain)
-		: axes_(axes)
-		, polygon_mash_(polygon_mash)
-		, plain_(plain)
-	{}
+	ObjectsView(const Axes& axes, PolygonMash& polygon_mash,
+		const Plain& plain);
+	~ObjectsView();
 	void ShowAll();
 	void PlainOnOff();
 };

@@ -17,12 +17,16 @@ struct TColor {
 };
 
 class Vertex {
+public:
+	using VertexType = std::vector<double>;
+
 private:
-	std::vector<float> pointXYZ_;
+	VertexType pointXYZ_;
 
 public:
-	void Push(float x, float y, float z);
-	const std::vector<float>& Get();
+	void Push(double x, double y, double z);
+	const VertexType& Get() const;
+	VertexType& Get();
 };
 
 using Contour = std::vector<unsigned int>;
@@ -44,10 +48,13 @@ private:
 
 public:
 	void Push(Edge&& edge);
-	void Begin();
-	const Edge& Next();
+	const Edge* Begin();
+	const Edge* Next();
 	void DeleteCurrent();
 	void End();
+	const auto& GeEdges() const {
+		return edges_;
+	}
 };
 
 class Plain {

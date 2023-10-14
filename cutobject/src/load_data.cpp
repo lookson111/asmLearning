@@ -13,14 +13,17 @@ LoadData(const std::filesystem::path& path)
 	if (!file)
 		return std::nullopt;
 	model::Plain plain;
-	if (float A, B, C, D; file >> A >> B >> C >> D) {
-		plain.Set(A, B, C, D);
+	if (std::string str; std::getline(file, str)) {
+		std::istringstream sstream(str);
+		if (float A, B, C, D; sstream >> A >> B >> C >> D) {
+			plain.Set(A, B, C, D);
+		}
 	}
 	model::PolygonMash polygon_mash;
 	// vertex read
 	if (std::string str; std::getline(file, str)) {
 		std::istringstream sstream(str);
-		float x, y, z;
+		double x, y, z;
 		while (sstream >> x >> y >> z) {
 			polygon_mash.vertex.Push(x, y, z);
 		}
