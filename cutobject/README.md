@@ -52,13 +52,6 @@
 Если возникнет желание\необходимость что-то использовать - то лучше
 заранее согласовать, чтобы никому не было обидно.
 
-https://ru.wikipedia.org/wiki/Полигональная_сетка
-https://russianblogs.com/article/8918228388/
-https://habr.com/ru/articles/195834/
-https://russianblogs.com/article/4896740001/
-
-
-
 # Install 
 ## Ubuntu
 ```
